@@ -75,7 +75,9 @@
       "Bash(sqlite3 /Users/hassanwork/Documents/belive-dev/vibe-coding-dev/vc_stocks_web_app/packages/db/push-temp.db .schema)",
       "Bash(pnpm --filter @vc/db exec prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script)",
       "Bash(TURSO_DATABASE_URL=\"libsql://vc-stocks-isearch.aws-ap-south-1.turso.io\" TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzI0MzM0OTUsImlkIjoiMDE5Y2FkNDQtODUwMS03NmY5LWFkYjYtNmU4NGQyNzdlMjRiIiwicmlkIjoiYWMwYjZhYmMtYThiMy00YjAxLTgyNjUtNWUzMTNmNTc2ZTE4In0.yiErNTz143RfKr5aLriLVLi6DaEYPWpJw4clfTkwKSB03XeEymSTD13oAet2MA5TGGw_5_yFiXWBRZ12VwYrBg\" pnpm --filter @vc/db exec tsx push-to-turso.ts)",
-      "Bash(TURSO_DATABASE_URL=\"libsql://vc-stocks-isearch.aws-ap-south-1.turso.io\" TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzI0MzM0OTUsImlkIjoiMDE5Y2FkNDQtODUwMS03NmY5LWFkYjYtNmU4NGQyNzdlMjRiIiwicmlkIjoiYWMwYjZhYmMtYThiMy00YjAxLTgyNjUtNWUzMTNmNTc2ZTE4In0.yiErNTz143RfKr5aLriLVLi6DaEYPWpJw4clfTkwKSB03XeEymSTD13oAet2MA5TGGw_5_yFiXWBRZ12VwYrBg\" pnpm --filter @vc/db seed)"
+      "Bash(TURSO_DATABASE_URL=\"libsql://vc-stocks-isearch.aws-ap-south-1.turso.io\" TURSO_AUTH_TOKEN=\"eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzI0MzM0OTUsImlkIjoiMDE5Y2FkNDQtODUwMS03NmY5LWFkYjYtNmU4NGQyNzdlMjRiIiwicmlkIjoiYWMwYjZhYmMtYThiMy00YjAxLTgyNjUtNWUzMTNmNTc2ZTE4In0.yiErNTz143RfKr5aLriLVLi6DaEYPWpJw4clfTkwKSB03XeEymSTD13oAet2MA5TGGw_5_yFiXWBRZ12VwYrBg\" pnpm --filter @vc/db seed)",
+      "Bash(pnpm --filter @vc/db build)",
+      "Bash(pnpm --filter @vc/db add -D @types/node)"
     ]
   }
 }
