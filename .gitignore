@@ -37,3 +37,6 @@ coverage/
 
 # Vercel
 .vercel/
+
+# Claude Code (local settings may contain sensitive permissions)
+.claude/settings.local.json
