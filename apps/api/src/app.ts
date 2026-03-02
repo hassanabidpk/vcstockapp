@@ -11,14 +11,18 @@ import { v1Router } from "./routes/v1/index.js";
 export function createApp() {
   const app = express();
 
+  // CORS must come before helmet so CORS headers are always set
+  const corsOptions = {
+    origin: config.corsOrigin.split(",").map((o) => o.trim()),
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  };
+  app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions)); // Handle preflight for all routes
+
   // Security & parsing
   app.use(helmet());
-  app.use(
-    cors({
-      origin: config.corsOrigin.split(",").map((o) => o.trim()),
-      credentials: true,
-    }),
-  );
   app.use(express.json());
 
   // Request ID & logging
