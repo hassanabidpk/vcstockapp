@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Portfolio {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  holdings  Holding[]
+  snapshots PortfolioSnapshot[]
+}
+
+model Holding {
+  id          String   @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  symbol      String
+  name        String
+  assetType   String   // "us_stock" | "sg_stock" | "crypto"
+  shares      Float    @default(0)
+  avgBuyPrice Float    @default(0)
+  manualPrice Float?
+  currency    String   @default("USD")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([portfolioId, symbol])
+  @@index([portfolioId])
+  @@index([symbol])
+}
+
+model PriceCache {
+  id            String   @id @default(cuid())
+  symbol        String   @unique
+  assetType     String
+  currentPrice  Float
+  change        Float?
+  changePercent Float?
+  currency      String   @default("USD")
+  pe            Float?
+  eps           Float?
+  bookValue     Float?
+  marketCap     Float?
+  fetchedAt     DateTime @default(now())
+  expiresAt     DateTime
+
+  @@index([assetType])
+  @@index([expiresAt])
+}
+
+model PriceHistory {
+  id     String   @id @default(cuid())
+  symbol String
+  date   DateTime
+  open   Float?
+  high   Float?
+  low    Float?
+  close  Float
+  volume Float?
+
+  @@unique([symbol, date])
+  @@index([symbol])
+  @@index([date])
+}
+
+model PortfolioSnapshot {
+  id          String   @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  date        DateTime
+  totalValue  Float
+  totalCost   Float
+  totalPL     Float
+
+  @@unique([portfolioId, date])
+  @@index([portfolioId])
+  @@index([date])
+}
