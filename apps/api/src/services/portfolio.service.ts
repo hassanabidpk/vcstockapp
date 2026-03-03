@@ -20,9 +20,13 @@ export const portfolioService = {
       .filter((h) => h.assetType === "us_stock" || h.assetType === "sg_stock")
       .map((h) => h.symbol);
 
-    const cryptoIds = portfolio.holdings
-      .filter((h) => h.assetType === "crypto")
-      .map((h) => h.symbol);
+    // For crypto, derive CoinGecko ID from the holding name (e.g. "Bitcoin" -> "bitcoin")
+    const cryptoHoldings = portfolio.holdings.filter((h) => h.assetType === "crypto");
+    const cryptoSymbolToId = new Map<string, string>();
+    for (const h of cryptoHoldings) {
+      cryptoSymbolToId.set(h.symbol, h.name.toLowerCase().replace(/\s+/g, "-"));
+    }
+    const cryptoIds = [...new Set(cryptoSymbolToId.values())];
 
     // Fetch prices and exchange rate in parallel
     const [stockQuotes, cryptoPrices, usdToSgd] = await Promise.all([
@@ -52,7 +56,9 @@ export const portfolioService = {
 
     // Enrich holdings with prices (manual price overrides API price)
     const holdings = portfolio.holdings.map((h) => {
-      const priceData = priceMap.get(h.symbol);
+      // For crypto, look up by CoinGecko ID derived from name; for stocks, use symbol
+      const lookupKey = h.assetType === "crypto" ? cryptoSymbolToId.get(h.symbol) || h.symbol : h.symbol;
+      const priceData = priceMap.get(lookupKey);
       const useManual = h.manualPrice != null;
       const currentPrice = useManual ? (h.manualPrice ?? 0) : (priceData?.price || 0);
       const { costBasis, marketValue, profitLoss, profitLossPercent } = calcProfitLoss(
