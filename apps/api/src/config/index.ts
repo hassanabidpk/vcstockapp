@@ -1,13 +1,9 @@
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const apiRoot = path.resolve(__dirname, "../..");
 
 // Load .env first, then .env.local overrides (like Next.js convention)
-dotenv.config({ path: path.join(apiRoot, ".env") });
-dotenv.config({ path: path.join(apiRoot, ".env.local"), override: true });
+// Uses cwd-relative paths — works in both ESM (tsx dev) and CJS (production build)
+dotenv.config();
+dotenv.config({ path: ".env.local", override: true });
 
 export const config = {
   port: parseInt(process.env.PORT || "4000", 10),
