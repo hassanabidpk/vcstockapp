@@ -18,6 +18,7 @@ export const config = {
     process.env.COINGECKO_BASE_URL ||
     "https://api.coingecko.com/api/v3",
   jwtSecret: process.env.JWT_SECRET || "dev-jwt-secret-change-in-production",
+  cronSecret: process.env.CRON_SECRET || "dev-cron-secret",
 
   get isDev() {
     return this.nodeEnv === "development";
