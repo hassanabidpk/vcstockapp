@@ -20,6 +20,10 @@ export class ApiError extends Error {
     return new ApiError(400, "BAD_REQUEST", message, details);
   }
 
+  static unauthorized(message: string): ApiError {
+    return new ApiError(401, "UNAUTHORIZED", message);
+  }
+
   static notFound(message: string): ApiError {
     return new ApiError(404, "NOT_FOUND", message);
   }

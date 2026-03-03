@@ -8,6 +8,7 @@ export interface Holding {
   assetType: AssetType;
   shares: number;
   avgBuyPrice: number;
+  platform: string;
   currency: string;
 }
 
@@ -28,6 +29,7 @@ export interface CreateHoldingInput {
   shares: number;
   avgBuyPrice: number;
   currency?: string;
+  platform?: string;
 }
 
 export interface UpdateHoldingInput {

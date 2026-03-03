@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api-client";
 
+const PLATFORM_OPTIONS = ["Moomoo", "Tiger", "IBKR", "OKX", "CoinHako"];
+
 export function AddHoldingModal({
   isOpen,
   onClose,
@@ -21,8 +23,12 @@ export function AddHoldingModal({
   const [assetType, setAssetType] = useState<"us_stock" | "sg_stock" | "crypto">("us_stock");
   const [shares, setShares] = useState("");
   const [avgBuyPrice, setAvgBuyPrice] = useState("");
+  const [platform, setPlatform] = useState("");
+  const [customPlatform, setCustomPlatform] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const effectivePlatform = platform === "__custom" ? customPlatform : platform;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,6 +43,7 @@ export function AddHoldingModal({
         shares: parseFloat(shares) || 0,
         avgBuyPrice: parseFloat(avgBuyPrice) || 0,
         currency: assetType === "sg_stock" ? "SGD" : "USD",
+        platform: effectivePlatform,
       });
       onAdded();
       // Reset form
@@ -44,6 +51,8 @@ export function AddHoldingModal({
       setName("");
       setShares("");
       setAvgBuyPrice("");
+      setPlatform("");
+      setCustomPlatform("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add holding");
     } finally {
@@ -107,6 +116,30 @@ export function AddHoldingModal({
             onChange={(e) => setAvgBuyPrice(e.target.value)}
           />
         </div>
+
+        <div>
+          <label className="block text-sm text-slate-400 mb-1">Platform / App</label>
+          <select
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">-- Select Platform --</option>
+            {PLATFORM_OPTIONS.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+            <option value="__custom">Other...</option>
+          </select>
+        </div>
+
+        {platform === "__custom" && (
+          <Input
+            label="Custom Platform Name"
+            placeholder="Enter platform name"
+            value={customPlatform}
+            onChange={(e) => setCustomPlatform(e.target.value)}
+          />
+        )}
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
 

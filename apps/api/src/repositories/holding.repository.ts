@@ -20,6 +20,7 @@ export const holdingRepository = {
     shares: number;
     avgBuyPrice: number;
     currency: string;
+    platform: string;
   }) {
     return prisma.holding.create({ data });
   },

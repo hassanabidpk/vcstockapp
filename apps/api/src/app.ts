@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import { config } from "./config/index.js";
 import { logger } from "./utils/logger.js";
@@ -24,6 +25,7 @@ export function createApp() {
   // Security & parsing
   app.use(helmet());
   app.use(express.json());
+  app.use(cookieParser());
 
   // Request ID & logging
   app.use(requestId);

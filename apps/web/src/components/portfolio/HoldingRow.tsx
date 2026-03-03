@@ -29,6 +29,11 @@ export function HoldingRow({
         <div>
           <span className="font-medium">{h.symbol}</span>
           <span className="text-xs text-slate-500 ml-2">{h.name}</span>
+          {h.platform && (
+            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 bg-slate-700 rounded text-slate-300">
+              {h.platform}
+            </span>
+          )}
         </div>
       </td>
       <td className="text-right py-3 pr-4 tabular-nums">{h.shares}</td>

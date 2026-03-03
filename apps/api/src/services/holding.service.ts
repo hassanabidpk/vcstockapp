@@ -12,6 +12,7 @@ export const holdingService = {
       shares: number;
       avgBuyPrice: number;
       currency?: string;
+      platform?: string;
     },
   ) {
     // Verify portfolio exists
@@ -27,10 +28,11 @@ export const holdingService = {
         shares: data.shares,
         avgBuyPrice: data.avgBuyPrice,
         currency: data.currency || (data.assetType === "sg_stock" ? "SGD" : "USD"),
+        platform: data.platform || "",
       });
     } catch (err: unknown) {
       if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
-        throw ApiError.conflict(`Holding for ${data.symbol} already exists in this portfolio`);
+        throw ApiError.conflict(`Holding for ${data.symbol} on ${data.platform || "default"} already exists in this portfolio`);
       }
       throw err;
     }

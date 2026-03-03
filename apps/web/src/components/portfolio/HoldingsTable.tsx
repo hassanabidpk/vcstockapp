@@ -74,7 +74,14 @@ export function HoldingsTable({
           >
             <div className="flex justify-between items-start">
               <div>
-                <p className="font-semibold">{h.symbol}</p>
+                <p className="font-semibold">
+                  {h.symbol}
+                  {h.platform && (
+                    <span className="text-[10px] ml-1.5 px-1.5 py-0.5 bg-slate-700 rounded text-slate-300 font-normal">
+                      {h.platform}
+                    </span>
+                  )}
+                </p>
                 <p className="text-xs text-slate-400">{h.name}</p>
               </div>
               <div className="text-right">

@@ -7,6 +7,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Portfolio {
   id        String    @id @default(cuid())
   name      String    @unique
@@ -26,11 +34,12 @@ model Holding {
   shares      Float    @default(0)
   avgBuyPrice Float    @default(0)
   manualPrice Float?
+  platform    String   @default("")
   currency    String   @default("USD")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([portfolioId, symbol])
+  @@unique([portfolioId, symbol, platform])
   @@index([portfolioId])
   @@index([symbol])
 }

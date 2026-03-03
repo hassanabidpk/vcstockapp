@@ -1,4 +1,5 @@
 import { prisma } from "../src/index";
+import bcrypt from "bcryptjs";
 
 const HASSAN_HOLDINGS = [
   { symbol: "NVDA", name: "NVIDIA Corp", assetType: "us_stock", currency: "USD" },
@@ -8,7 +9,7 @@ const HASSAN_HOLDINGS = [
   { symbol: "C6L.SI", name: "Singapore Airlines", assetType: "sg_stock", currency: "SGD" },
 ];
 
-const WIFE_HOLDINGS = [
+const SIEW_FEN_HOLDINGS = [
   { symbol: "NVDA", name: "NVIDIA Corp", assetType: "us_stock", currency: "USD" },
   { symbol: "GOOGL", name: "Alphabet Inc (Class A)", assetType: "us_stock", currency: "USD" },
   { symbol: "PLTR", name: "Palantir Technologies", assetType: "us_stock", currency: "USD" },
@@ -22,6 +23,20 @@ const WIFE_HOLDINGS = [
 ];
 
 async function main() {
+  // Seed default user — password from SEED_PASSWORD env var, fallback to "admin"
+  const seedPassword = process.env.SEED_PASSWORD || "admin";
+  const seedUsername = process.env.SEED_USERNAME || "admin";
+  const passwordHash = await bcrypt.hash(seedPassword, 10);
+  await prisma.user.upsert({
+    where: { username: seedUsername },
+    update: { passwordHash },
+    create: {
+      username: seedUsername,
+      passwordHash,
+    },
+  });
+  console.log(`Seeded user: ${seedUsername} (password from ${process.env.SEED_PASSWORD ? "SEED_PASSWORD env" : "default"})`);
+
   // Create portfolios
   const hassan = await prisma.portfolio.upsert({
     where: { name: "Hassan" },
@@ -29,17 +44,17 @@ async function main() {
     create: { name: "Hassan" },
   });
 
-  const wife = await prisma.portfolio.upsert({
-    where: { name: "Wife" },
+  const siewFen = await prisma.portfolio.upsert({
+    where: { name: "Siew Fen" },
     update: {},
-    create: { name: "Wife" },
+    create: { name: "Siew Fen" },
   });
 
   // Seed Hassan's holdings
   for (const holding of HASSAN_HOLDINGS) {
     await prisma.holding.upsert({
       where: {
-        portfolioId_symbol: { portfolioId: hassan.id, symbol: holding.symbol },
+        portfolioId_symbol_platform: { portfolioId: hassan.id, symbol: holding.symbol, platform: "" },
       },
       update: {},
       create: {
@@ -50,32 +65,34 @@ async function main() {
         currency: holding.currency,
         shares: 0,
         avgBuyPrice: 0,
+        platform: "",
       },
     });
   }
 
-  // Seed Wife's holdings
-  for (const holding of WIFE_HOLDINGS) {
+  // Seed Siew Fen's holdings
+  for (const holding of SIEW_FEN_HOLDINGS) {
     await prisma.holding.upsert({
       where: {
-        portfolioId_symbol: { portfolioId: wife.id, symbol: holding.symbol },
+        portfolioId_symbol_platform: { portfolioId: siewFen.id, symbol: holding.symbol, platform: "" },
       },
       update: {},
       create: {
-        portfolioId: wife.id,
+        portfolioId: siewFen.id,
         symbol: holding.symbol,
         name: holding.name,
         assetType: holding.assetType,
         currency: holding.currency,
         shares: 0,
         avgBuyPrice: 0,
+        platform: "",
       },
     });
   }
 
   console.log("Seeded portfolios:");
   console.log(`  Hassan: ${HASSAN_HOLDINGS.length} holdings`);
-  console.log(`  Wife: ${WIFE_HOLDINGS.length} holdings`);
+  console.log(`  Siew Fen: ${SIEW_FEN_HOLDINGS.length} holdings`);
 }
 
 main()

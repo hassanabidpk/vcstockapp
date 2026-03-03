@@ -13,6 +13,7 @@ const createSchema = {
     shares: z.number().min(0),
     avgBuyPrice: z.number().min(0),
     currency: z.enum(["USD", "SGD"]).optional(),
+    platform: z.string().max(50).optional(),
   }),
 };
 

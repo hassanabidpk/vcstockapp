@@ -70,6 +70,7 @@ export const portfolioService = {
         shares: h.shares,
         avgBuyPrice: h.avgBuyPrice,
         manualPrice: h.manualPrice,
+        platform: (h as any).platform || "",
         currency: h.currency,
         currentPrice,
         change: useManual ? 0 : (priceData?.change || 0),

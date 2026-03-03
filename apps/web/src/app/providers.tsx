@@ -1,8 +1,16 @@
 "use client";
+import { usePathname } from "next/navigation";
 import { PortfolioProvider } from "@/context/PortfolioContext";
 import { Header } from "@/components/layout/Header";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Don't wrap login page with PortfolioProvider (it would make unauthenticated API calls)
+  if (pathname === "/login") {
+    return <main>{children}</main>;
+  }
+
   return (
     <PortfolioProvider>
       <Header />

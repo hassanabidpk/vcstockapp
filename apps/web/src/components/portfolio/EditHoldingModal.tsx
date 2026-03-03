@@ -60,7 +60,14 @@ export function EditHoldingModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${holding.symbol}`}>
       <div className="mb-4">
-        <p className="text-slate-400 text-sm">{holding.name}</p>
+        <p className="text-slate-400 text-sm">
+          {holding.name}
+          {holding.platform && (
+            <span className="ml-2 px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300">
+              {holding.platform}
+            </span>
+          )}
+        </p>
         {holding.currentPrice > 0 && (
           <p className="text-lg font-semibold mt-1">
             Current: ${holding.currentPrice.toFixed(2)}
