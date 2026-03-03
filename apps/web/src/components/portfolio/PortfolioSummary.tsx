@@ -27,6 +27,11 @@ export function PortfolioSummary({
       <Card>
         <p className="text-sm text-slate-400 mb-1">Total Value</p>
         <p className="text-2xl font-bold">{formatCurrency(summary.totalValue)}</p>
+        {usdToSgd && (
+          <p className="text-xs text-slate-500 mt-1">
+            ≈ S${(summary.totalValue * usdToSgd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        )}
         <p className="text-xs text-slate-500 mt-1">
           Cost basis: {formatCurrency(summary.totalCost)}
         </p>
