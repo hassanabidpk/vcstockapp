@@ -455,13 +455,14 @@ export const stockPriceService = {
       type: string;
     }> = [];
 
-    // US stocks: Twelve Data primary, FMP fallback
+    // Twelve Data: search for both US (NASDAQ/NYSE) and SG (SGX) in one call
     if (hasTwelveData) {
       try {
-        const tdResults = await twelveDataService.search(query);
-        results.push(...tdResults);
+        const { us, sg } = await twelveDataService.search(query);
+        results.push(...us, ...sg);
       } catch (err) {
         logger.warn({ err, query }, "Twelve Data search failed, falling back to FMP");
+        // FMP fallback for US stocks
         try {
           const fmpResults = await fmpFetch<FMPSearch[]>(
             `/search-symbol?query=${encodeURIComponent(query)}&exchange=NASDAQ,NYSE&limit=10`,
@@ -480,7 +481,7 @@ export const stockPriceService = {
         }
       }
     } else {
-      // No Twelve Data: FMP for US stocks
+      // No Twelve Data: FMP for US + SGX stocks
       try {
         const fmpResults = await fmpFetch<FMPSearch[]>(
           `/search-symbol?query=${encodeURIComponent(query)}&exchange=NASDAQ,NYSE&limit=10`,
@@ -497,24 +498,25 @@ export const stockPriceService = {
       } catch (err) {
         logger.error({ err, query }, "FMP US search failed");
       }
-    }
 
-    // SGX stocks: always FMP
-    try {
-      const sgResults = await fmpFetch<FMPSearch[]>(
-        `/search-symbol?query=${encodeURIComponent(query)}&exchange=SGX&limit=5`,
-      );
-      results.push(
-        ...sgResults.map((r) => ({
-          symbol: r.symbol,
-          name: r.name,
-          exchange: r.exchangeFullName,
-          exchangeShortName: r.exchange,
-          type: "stock",
-        })),
-      );
-    } catch (err) {
-      logger.warn({ err, query }, "FMP SGX search failed");
+      try {
+        const sgResults = await fmpFetch<FMPSearch[]>(
+          `/search-symbol?query=${encodeURIComponent(query)}&exchange=SGX&limit=5`,
+        );
+        results.push(
+          ...sgResults
+            .filter((r) => r.exchange === "SGX" || r.exchange === "XSES")
+            .map((r) => ({
+              symbol: r.symbol,
+              name: r.name,
+              exchange: r.exchangeFullName,
+              exchangeShortName: r.exchange,
+              type: "stock",
+            })),
+        );
+      } catch (err) {
+        logger.warn({ err, query }, "FMP SGX search failed");
+      }
     }
 
     return results.slice(0, 15);

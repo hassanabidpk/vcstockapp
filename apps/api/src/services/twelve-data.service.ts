@@ -100,13 +100,19 @@ export const twelveDataService = {
     const result = await tdFetch<TDSearchResult>(
       `/symbol_search?symbol=${encodeURIComponent(query)}`,
     );
-    if (!result.data) return [];
-    return result.data
-      .filter(
-        (r) =>
-          r.instrument_type === "Common Stock" ||
-          r.instrument_type === "ETF",
-      )
+    if (!result.data) return { us: [], sg: [] };
+
+    const stocksAndETFs = result.data.filter(
+      (r) =>
+        r.instrument_type === "Common Stock" ||
+        r.instrument_type === "ETF",
+    );
+
+    // US: strictly NASDAQ and NYSE only
+    const US_EXCHANGES = new Set(["NASDAQ", "NYSE", "AMEX"]);
+    const US_MIC_CODES = new Set(["XNGS", "XNMS", "XNYS", "XASE", "XNAS"]);
+    const us = stocksAndETFs
+      .filter((r) => US_EXCHANGES.has(r.exchange) || US_MIC_CODES.has(r.mic_code))
       .slice(0, 10)
       .map((r) => ({
         symbol: r.symbol,
@@ -115,5 +121,19 @@ export const twelveDataService = {
         exchangeShortName: r.mic_code,
         type: r.instrument_type.toLowerCase(),
       }));
+
+    // SG: strictly SGX only
+    const sg = stocksAndETFs
+      .filter((r) => r.exchange === "SGX" || r.mic_code === "XSES")
+      .slice(0, 5)
+      .map((r) => ({
+        symbol: r.symbol,
+        name: r.instrument_name,
+        exchange: r.exchange,
+        exchangeShortName: r.mic_code,
+        type: r.instrument_type.toLowerCase(),
+      }));
+
+    return { us, sg };
   },
 };
