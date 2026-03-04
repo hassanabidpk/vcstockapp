@@ -1,9 +1,27 @@
 import { config } from "../config/index.js";
 import { logger } from "../utils/logger.js";
 import { cacheService } from "./cache.service.js";
+import { twelveDataService } from "./twelve-data.service.js";
 
 const FMP_BASE = config.fmpBaseUrl;
 const API_KEY = config.fmpApiKey;
+const hasTwelveData = !!config.twelveDataApiKey;
+
+function isSGStock(symbol: string): boolean {
+  return symbol.includes(".SI");
+}
+
+function rangeToOutputSize(range: string): number {
+  switch (range) {
+    case "1W": return 7;
+    case "1M": return 30;
+    case "3M": return 90;
+    case "6M": return 180;
+    case "1Y": return 365;
+    case "5Y": return 1825;
+    default: return 30;
+  }
+}
 
 async function fmpFetch<T>(path: string): Promise<T> {
   const separator = path.includes("?") ? "&" : "?";
@@ -90,9 +108,46 @@ interface FMPProfile {
   image: string;
 }
 
+interface QuoteResult {
+  symbol: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  dayHigh: number;
+  dayLow: number;
+  volume: number;
+  marketCap: number;
+  exchange: string;
+}
+
 export const stockPriceService = {
+  /** Fetch a single quote from FMP */
+  async _fetchQuoteFromFMP(symbol: string): Promise<QuoteResult | null> {
+    try {
+      const quotes = await fmpFetch<FMPQuote[]>(`/quote?symbol=${symbol}`);
+      if (!quotes || quotes.length === 0) return null;
+      const q = quotes[0];
+      return {
+        symbol: q.symbol,
+        name: q.name,
+        price: q.price,
+        change: q.change,
+        changePercent: q.changePercentage,
+        dayHigh: q.dayHigh,
+        dayLow: q.dayLow,
+        volume: q.volume,
+        marketCap: q.marketCap,
+        exchange: q.exchange,
+      };
+    } catch (err) {
+      logger.error({ err, symbol }, "Failed to fetch quote from FMP");
+      return null;
+    }
+  },
+
   async getQuote(symbol: string) {
-    // Check cache first
+    // 1. Check cache first
     const cached = await cacheService.getCachedPrice(symbol);
     if (cached) {
       return {
@@ -111,62 +166,68 @@ export const stockPriceService = {
       };
     }
 
-    let quotes: FMPQuote[];
-    try {
-      quotes = await fmpFetch<FMPQuote[]>(`/quote?symbol=${symbol}`);
-    } catch (err) {
-      logger.error({ err, symbol }, "Failed to fetch quote from FMP");
-      // Fallback to stale (expired) cache rather than returning nothing
+    // 2. Fetch from provider
+    let quoteData: QuoteResult | null = null;
+
+    if (isSGStock(symbol)) {
+      // SG stocks: manual price only (FMP free tier doesn't support SGX)
+      logger.debug({ symbol }, "SG stock — skipping API fetch, use manual price");
+    } else if (hasTwelveData) {
+      // US stocks: Twelve Data primary, FMP fallback
+      try {
+        quoteData = await twelveDataService.getQuote(symbol);
+      } catch (err) {
+        logger.warn({ err, symbol }, "Twelve Data quote failed, falling back to FMP");
+        quoteData = await this._fetchQuoteFromFMP(symbol);
+      }
+    } else {
+      // No Twelve Data key: FMP only
+      quoteData = await this._fetchQuoteFromFMP(symbol);
+    }
+
+    if (!quoteData) {
+      // All providers failed; try stale cache
       const stale = await cacheService.getStalePrices([symbol]);
       if (stale.length > 0) {
         const s = stale[0];
         logger.info({ symbol, fetchedAt: s.fetchedAt }, "Using stale cached price for quote");
         return {
-          symbol: s.symbol,
-          name: symbol,
-          price: s.currentPrice,
-          change: s.change || 0,
-          changePercent: s.changePercent || 0,
-          dayHigh: 0,
-          dayLow: 0,
-          volume: 0,
-          marketCap: s.marketCap || 0,
-          pe: s.pe,
-          eps: s.eps,
-          exchange: "",
+          symbol: s.symbol, name: symbol, price: s.currentPrice,
+          change: s.change || 0, changePercent: s.changePercent || 0,
+          dayHigh: 0, dayLow: 0, volume: 0,
+          marketCap: s.marketCap || 0, pe: s.pe, eps: s.eps, exchange: "",
         };
       }
       return null;
     }
-    if (!quotes || quotes.length === 0) return null;
 
-    const q = quotes[0];
-    // Cache the price
+    // 3. Cache the result
+    const sgStock = isSGStock(symbol);
     await cacheService.setCachedPrice({
-      symbol: q.symbol,
-      assetType: symbol.includes(".SI") ? "sg_stock" : "us_stock",
-      currentPrice: q.price,
-      change: q.change,
-      changePercent: q.changePercentage,
+      symbol: quoteData.symbol,
+      assetType: sgStock ? "sg_stock" : "us_stock",
+      currentPrice: quoteData.price,
+      change: quoteData.change,
+      changePercent: quoteData.changePercent,
       pe: null,
       eps: null,
-      marketCap: q.marketCap,
-      currency: symbol.includes(".SI") ? "SGD" : "USD",
+      marketCap: quoteData.marketCap,
+      currency: sgStock ? "SGD" : "USD",
     });
 
     return {
-      symbol: q.symbol,
-      name: q.name,
-      price: q.price,
-      change: q.change,
-      changePercent: q.changePercentage,
-      dayHigh: q.dayHigh,
-      dayLow: q.dayLow,
-      volume: q.volume,
-      marketCap: q.marketCap,
+      symbol: quoteData.symbol,
+      name: quoteData.name,
+      price: quoteData.price,
+      change: quoteData.change,
+      changePercent: quoteData.changePercent,
+      dayHigh: quoteData.dayHigh,
+      dayLow: quoteData.dayLow,
+      volume: quoteData.volume,
+      marketCap: quoteData.marketCap,
       pe: null,
       eps: null,
-      exchange: q.exchange,
+      exchange: quoteData.exchange,
     };
   },
 
@@ -203,40 +264,57 @@ export const stockPriceService = {
       });
     }
 
-    // Fetch missing from FMP sequentially with delay to avoid rate-limit spikes
     if (missing.length > 0) {
-      for (const symbol of missing) {
-        try {
-          const arr = await fmpFetch<FMPQuote[]>(`/quote?symbol=${symbol}`);
-          const q = arr?.[0];
-          if (q) {
+      const missingSG = missing.filter((s) => isSGStock(s));
+      const missingUS = missing.filter((s) => !isSGStock(s));
+
+      // SG stocks: manual price only (FMP free tier doesn't support SGX)
+      if (missingSG.length > 0) {
+        logger.debug({ symbols: missingSG }, "SG stocks — skipping API fetch, use manual prices");
+      }
+
+      // US stocks: Twelve Data primary, FMP fallback
+      for (const symbol of missingUS) {
+        let fetched = false;
+
+        if (hasTwelveData) {
+          try {
+            const td = await twelveDataService.getQuote(symbol);
             await cacheService.setCachedPrice({
-              symbol: q.symbol,
-              assetType: q.symbol.includes(".SI") ? "sg_stock" : "us_stock",
-              currentPrice: q.price,
-              change: q.change,
-              changePercent: q.changePercentage,
-              pe: null,
-              eps: null,
-              marketCap: q.marketCap,
-              currency: q.symbol.includes(".SI") ? "SGD" : "USD",
+              symbol: td.symbol, assetType: "us_stock",
+              currentPrice: td.price, change: td.change,
+              changePercent: td.changePercent, pe: null, eps: null,
+              marketCap: td.marketCap, currency: "USD",
             });
             results.push({
-              symbol: q.symbol,
-              name: q.name,
-              price: q.price,
-              change: q.change,
-              changePercent: q.changePercentage,
-              pe: null,
-              eps: null,
-              marketCap: q.marketCap,
+              symbol: td.symbol, name: td.name, price: td.price,
+              change: td.change, changePercent: td.changePercent,
+              pe: null, eps: null, marketCap: td.marketCap,
+            });
+            fetched = true;
+          } catch (err) {
+            logger.warn({ err, symbol }, "Twelve Data batch quote failed, trying FMP");
+          }
+        }
+
+        if (!fetched) {
+          const fmp = await this._fetchQuoteFromFMP(symbol);
+          if (fmp) {
+            await cacheService.setCachedPrice({
+              symbol: fmp.symbol, assetType: "us_stock",
+              currentPrice: fmp.price, change: fmp.change,
+              changePercent: fmp.changePercent, pe: null, eps: null,
+              marketCap: fmp.marketCap, currency: "USD",
+            });
+            results.push({
+              symbol: fmp.symbol, name: fmp.name, price: fmp.price,
+              change: fmp.change, changePercent: fmp.changePercent,
+              pe: null, eps: null, marketCap: fmp.marketCap,
             });
           }
-        } catch (err) {
-          logger.warn({ err, symbol }, "Failed to fetch quote for symbol");
         }
-        // Small delay between calls to stay within FMP free-tier rate limits
-        if (missing.indexOf(symbol) < missing.length - 1) {
+
+        if (missingUS.indexOf(symbol) < missingUS.length - 1) {
           await new Promise((r) => setTimeout(r, 300));
         }
       }
@@ -305,6 +383,31 @@ export const stockPriceService = {
       }));
     }
 
+    // Try Twelve Data for US stocks
+    if (!isSGStock(symbol) && hasTwelveData) {
+      try {
+        const outputsize = rangeToOutputSize(range);
+        const tdHistory = await twelveDataService.getHistory(symbol, outputsize);
+        if (tdHistory.length > 0) {
+          await cacheService.setHistory(
+            symbol,
+            tdHistory.map((h) => ({
+              date: new Date(h.date),
+              open: h.open,
+              high: h.high,
+              low: h.low,
+              close: h.close,
+              volume: h.volume,
+            })),
+          );
+          return tdHistory;
+        }
+      } catch (err) {
+        logger.warn({ err, symbol }, "Twelve Data history failed, falling back to FMP");
+      }
+    }
+
+    // FMP fallback (or primary for SG stocks)
     try {
       const fromStr = from.toISOString().split("T")[0];
       const toStr = now.toISOString().split("T")[0];
@@ -313,7 +416,6 @@ export const stockPriceService = {
       );
 
       if (data && data.length > 0) {
-        // Cache history
         await cacheService.setHistory(
           symbol,
           data.map((h) => ({
@@ -345,19 +447,77 @@ export const stockPriceService = {
   },
 
   async search(query: string) {
-    try {
-      const results = await fmpFetch<FMPSearch[]>(`/search-symbol?query=${encodeURIComponent(query)}&exchange=NASDAQ,NYSE,SGX&limit=10`);
-      return results.map((r) => ({
-        symbol: r.symbol,
-        name: r.name,
-        exchange: r.exchangeFullName,
-        exchangeShortName: r.exchange,
-        type: "stock",
-      }));
-    } catch (err) {
-      logger.error({ err, query }, "Failed to search FMP");
-      return [];
+    const results: Array<{
+      symbol: string;
+      name: string;
+      exchange: string;
+      exchangeShortName: string;
+      type: string;
+    }> = [];
+
+    // US stocks: Twelve Data primary, FMP fallback
+    if (hasTwelveData) {
+      try {
+        const tdResults = await twelveDataService.search(query);
+        results.push(...tdResults);
+      } catch (err) {
+        logger.warn({ err, query }, "Twelve Data search failed, falling back to FMP");
+        try {
+          const fmpResults = await fmpFetch<FMPSearch[]>(
+            `/search-symbol?query=${encodeURIComponent(query)}&exchange=NASDAQ,NYSE&limit=10`,
+          );
+          results.push(
+            ...fmpResults.map((r) => ({
+              symbol: r.symbol,
+              name: r.name,
+              exchange: r.exchangeFullName,
+              exchangeShortName: r.exchange,
+              type: "stock",
+            })),
+          );
+        } catch (fmpErr) {
+          logger.error({ err: fmpErr, query }, "FMP US search also failed");
+        }
+      }
+    } else {
+      // No Twelve Data: FMP for US stocks
+      try {
+        const fmpResults = await fmpFetch<FMPSearch[]>(
+          `/search-symbol?query=${encodeURIComponent(query)}&exchange=NASDAQ,NYSE&limit=10`,
+        );
+        results.push(
+          ...fmpResults.map((r) => ({
+            symbol: r.symbol,
+            name: r.name,
+            exchange: r.exchangeFullName,
+            exchangeShortName: r.exchange,
+            type: "stock",
+          })),
+        );
+      } catch (err) {
+        logger.error({ err, query }, "FMP US search failed");
+      }
     }
+
+    // SGX stocks: always FMP
+    try {
+      const sgResults = await fmpFetch<FMPSearch[]>(
+        `/search-symbol?query=${encodeURIComponent(query)}&exchange=SGX&limit=5`,
+      );
+      results.push(
+        ...sgResults.map((r) => ({
+          symbol: r.symbol,
+          name: r.name,
+          exchange: r.exchangeFullName,
+          exchangeShortName: r.exchange,
+          type: "stock",
+        })),
+      );
+    } catch (err) {
+      logger.warn({ err, query }, "FMP SGX search failed");
+    }
+
+    return results.slice(0, 15);
   },
 
   async getProfile(symbol: string) {

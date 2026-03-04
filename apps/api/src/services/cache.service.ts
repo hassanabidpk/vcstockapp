@@ -1,9 +1,11 @@
 import { priceCacheRepository } from "../repositories/price-cache.repository.js";
+import { getUSStockCacheTTLMinutes } from "../utils/market-hours.js";
 
-/** Cache TTL in minutes */
+/** Cache TTL in minutes — market-hours-aware for US stocks */
 function getTTLMinutes(assetType: string): number {
-  // Simple TTL: 5 min for stocks during likely market hours, 5 min for crypto
   if (assetType === "crypto") return 5;
+  if (assetType === "us_stock") return getUSStockCacheTTLMinutes();
+  if (assetType === "sg_stock") return 5;
   return 5;
 }
 

@@ -17,6 +17,10 @@ export const config = {
   coingeckoBaseUrl:
     process.env.COINGECKO_BASE_URL ||
     "https://api.coingecko.com/api/v3",
+  twelveDataApiKey: process.env.TWELVE_DATA_API_KEY || "",
+  twelveDataBaseUrl:
+    process.env.TWELVE_DATA_BASE_URL ||
+    "https://api.twelvedata.com",
   jwtSecret: process.env.JWT_SECRET || "dev-jwt-secret-change-in-production",
   cronSecret: process.env.CRON_SECRET || "dev-cron-secret",
 
