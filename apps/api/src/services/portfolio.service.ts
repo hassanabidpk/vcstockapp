@@ -5,6 +5,7 @@ import { exchangeRateService } from "./exchange-rate.service.js";
 import { calcProfitLoss, aggregatePortfolio } from "@vc/utils";
 import type { HoldingWithPrice } from "@vc/types";
 import { ApiError } from "../utils/api-error.js";
+import { config } from "../config/index.js";
 
 export const portfolioService = {
   async listAll() {
@@ -54,12 +55,23 @@ export const portfolioService = {
       });
     }
 
-    // Enrich holdings with prices (manual price overrides API price)
+    // Enrich holdings with prices
+    // For US stocks with Twelve Data available: prefer live API price over manual price
+    // For SG stocks: always use manual price (no free API available)
+    const hasTwelveData = !!config.twelveDataApiKey;
+
     const holdings = portfolio.holdings.map((h) => {
       // For crypto, look up by CoinGecko ID derived from name; for stocks, use symbol
       const lookupKey = h.assetType === "crypto" ? cryptoSymbolToId.get(h.symbol) || h.symbol : h.symbol;
       const priceData = priceMap.get(lookupKey);
-      const useManual = h.manualPrice != null;
+
+      // US stocks with live Twelve Data prices → ignore manual price, use API
+      // SG stocks → always use manual price (no API source)
+      // Crypto → use API price, manual as fallback
+      const hasLivePrice = priceData && priceData.price > 0;
+      const canUseLiveForUS = h.assetType === "us_stock" && hasTwelveData && hasLivePrice;
+      const useManual = h.manualPrice != null && !canUseLiveForUS;
+
       const currentPrice = useManual ? (h.manualPrice ?? 0) : (priceData?.price || 0);
       const { costBasis, marketValue, profitLoss, profitLossPercent } = calcProfitLoss(
         h.shares,
@@ -75,7 +87,7 @@ export const portfolioService = {
         assetType: h.assetType as "us_stock" | "sg_stock" | "crypto",
         shares: h.shares,
         avgBuyPrice: h.avgBuyPrice,
-        manualPrice: h.manualPrice,
+        manualPrice: useManual ? h.manualPrice : null,
         platform: (h as any).platform || "",
         currency: h.currency,
         currentPrice,
