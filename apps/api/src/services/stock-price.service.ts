@@ -248,6 +248,7 @@ export const stockPriceService = {
       pe: number | null;
       eps: number | null;
       marketCap: number;
+      priceUpdatedAt: string | null;
     }> = [];
 
     // Add cached results
@@ -261,6 +262,7 @@ export const stockPriceService = {
         pe: c.pe,
         eps: c.eps,
         marketCap: c.marketCap || 0,
+        priceUpdatedAt: c.fetchedAt?.toISOString() || null,
       });
     }
 
@@ -290,6 +292,7 @@ export const stockPriceService = {
               symbol: td.symbol, name: td.name, price: td.price,
               change: td.change, changePercent: td.changePercent,
               pe: null, eps: null, marketCap: td.marketCap,
+              priceUpdatedAt: new Date().toISOString(),
             });
             fetched = true;
           } catch (err) {
@@ -310,6 +313,7 @@ export const stockPriceService = {
               symbol: fmp.symbol, name: fmp.name, price: fmp.price,
               change: fmp.change, changePercent: fmp.changePercent,
               pe: null, eps: null, marketCap: fmp.marketCap,
+              priceUpdatedAt: new Date().toISOString(),
             });
           }
         }
@@ -336,6 +340,7 @@ export const stockPriceService = {
           pe: c.pe,
           eps: c.eps,
           marketCap: c.marketCap || 0,
+          priceUpdatedAt: c.fetchedAt?.toISOString() || null,
         });
       }
     }

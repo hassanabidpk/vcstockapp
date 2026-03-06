@@ -37,13 +37,14 @@ export const portfolioService = {
     ]);
 
     // Build price map
-    const priceMap = new Map<string, { price: number; change: number; changePercent: number; name: string }>();
+    const priceMap = new Map<string, { price: number; change: number; changePercent: number; name: string; priceUpdatedAt: string | null }>();
     for (const q of stockQuotes) {
       priceMap.set(q.symbol, {
         price: q.price,
         change: q.change,
         changePercent: q.changePercent,
         name: q.name,
+        priceUpdatedAt: (q as any).priceUpdatedAt || null,
       });
     }
     for (const c of cryptoPrices) {
@@ -52,6 +53,7 @@ export const portfolioService = {
         change: c.change24h,
         changePercent: c.changePercent24h,
         name: c.name,
+        priceUpdatedAt: null,
       });
     }
 
@@ -93,6 +95,7 @@ export const portfolioService = {
         currentPrice,
         change: useManual ? 0 : (priceData?.change || 0),
         changePercent: useManual ? 0 : (priceData?.changePercent || 0),
+        priceUpdatedAt: useManual ? null : (priceData?.priceUpdatedAt || null),
         marketValue,
         costBasis,
         profitLoss,

@@ -108,6 +108,7 @@ export interface HoldingData {
   currentPrice: number;
   change: number;
   changePercent: number;
+  priceUpdatedAt: string | null;
   marketValue: number;
   costBasis: number;
   profitLoss: number;

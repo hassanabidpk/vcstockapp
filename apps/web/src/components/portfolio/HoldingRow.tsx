@@ -10,6 +10,17 @@ function fmt(v: number, currency: string = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
 }
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 export function HoldingRow({
   holding,
   onClick,
@@ -38,10 +49,15 @@ export function HoldingRow({
       </td>
       <td className="text-right py-3 pr-4 tabular-nums">{h.shares}</td>
       <td className="text-right py-3 pr-4 tabular-nums text-slate-400">{fmt(h.avgBuyPrice, h.currency)}</td>
-      <td className="text-right py-3 pr-4 tabular-nums">
-        {fmt(h.currentPrice, h.currency)}
-        {h.manualPrice != null && (
-          <span className="text-[10px] ml-1 text-amber-400 font-medium">M</span>
+      <td className="text-right py-3 pr-4">
+        <div className="tabular-nums">
+          {fmt(h.currentPrice, h.currency)}
+          {h.manualPrice != null && (
+            <span className="text-[10px] ml-1 text-amber-400 font-medium">M</span>
+          )}
+        </div>
+        {h.priceUpdatedAt && (
+          <div className="text-[10px] text-slate-500">{timeAgo(h.priceUpdatedAt)}</div>
         )}
       </td>
       <td className="text-right py-3 pr-4 tabular-nums">{fmt(h.marketValue, h.currency)}</td>

@@ -4,6 +4,17 @@ import type { HoldingData } from "@/lib/api-client";
 import { HoldingRow } from "./HoldingRow";
 import { EditHoldingModal } from "./EditHoldingModal";
 
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
 function formatCurrency(v: number, currency: string = "USD") {
   if (currency === "SGD") {
     const abs = Math.abs(v);
@@ -100,6 +111,9 @@ export function HoldingsTable({
               <span>{h.shares} shares @ {formatCurrency(h.avgBuyPrice, h.currency)}</span>
               <span>Value: {formatCurrency(h.marketValue, h.currency)}</span>
             </div>
+            {h.priceUpdatedAt && (
+              <div className="text-[10px] text-slate-500 mt-1">Updated {timeAgo(h.priceUpdatedAt)}</div>
+            )}
           </div>
         ))}
       </div>
