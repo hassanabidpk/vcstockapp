@@ -14,7 +14,7 @@ export const authController = {
         path: "/",
       });
 
-      res.json({ data: { user } });
+      res.json({ data: { user, token } });
     } catch (err) {
       next(err);
     }
