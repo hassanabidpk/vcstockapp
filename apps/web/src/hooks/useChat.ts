@@ -1,0 +1,130 @@
+"use client";
+import { useState, useCallback, useRef } from "react";
+import { getFirebaseApp } from "@/lib/firebase";
+import { getAI, getGenerativeModel, type ChatSession } from "firebase/ai";
+import type { PortfolioData } from "@/lib/api-client";
+
+export interface ChatMessage {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+}
+
+function buildSystemPrompt(portfolio: PortfolioData): string {
+  const s = portfolio.summary;
+  const holdingsRows = Object.entries(s.byAssetType)
+    .flatMap(([type, group]) =>
+      group.holdings.map(
+        (h) =>
+          `${h.symbol} | ${type} | ${h.shares} | $${h.avgBuyPrice.toFixed(2)} | $${h.currentPrice.toFixed(2)} | $${h.profitLoss.toFixed(2)} | ${h.profitLossPercent.toFixed(1)}%`
+      )
+    )
+    .join("\n");
+
+  return `You are a helpful stock market advisor for the VC Stocks portfolio app.
+IMPORTANT: You are NOT a licensed financial advisor. Always include a brief disclaimer that your responses are for informational purposes only.
+
+Portfolio: ${portfolio.name}
+Total Value: $${s.totalValue.toFixed(2)}
+Total Cost: $${s.totalCost.toFixed(2)}
+Total P/L: $${s.totalPL.toFixed(2)} (${s.totalPLPercent.toFixed(1)}%)
+Day Change: $${s.dayChange.toFixed(2)} (${s.dayChangePercent.toFixed(1)}%)
+
+Holdings:
+Symbol | Type | Shares | Avg Price | Current | P/L | P/L%
+${holdingsRows}
+
+Help the user understand their investments and provide general market insights.
+When discussing specific stocks, reference their actual holdings data above.`;
+}
+
+let nextId = 1;
+function createId(): string {
+  return `msg_${nextId++}_${Date.now()}`;
+}
+
+export function useChat(portfolio: PortfolioData | undefined) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const chatSessionRef = useRef<ChatSession | null>(null);
+  const initializedForRef = useRef<string | null>(null);
+
+  // Lazily initialise when portfolio becomes available (or changes)
+  const ensureSession = useCallback(() => {
+    if (!portfolio) return null;
+    if (initializedForRef.current === portfolio.id && chatSessionRef.current) {
+      return chatSessionRef.current;
+    }
+
+    const app = getFirebaseApp();
+    const ai = getAI(app);
+    const model = getGenerativeModel(ai, {
+      model: "gemini-3-flash-preview",
+      systemInstruction: buildSystemPrompt(portfolio),
+    });
+    chatSessionRef.current = model.startChat();
+    initializedForRef.current = portfolio.id;
+    return chatSessionRef.current;
+  }, [portfolio]);
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      const session = ensureSession();
+      if (!session) return;
+
+      const userMsg: ChatMessage = {
+        id: createId(),
+        text,
+        isUser: true,
+        timestamp: new Date(),
+      };
+      const aiMsgId = createId();
+      const aiMsg: ChatMessage = {
+        id: aiMsgId,
+        text: "",
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, userMsg, aiMsg]);
+      setIsGenerating(true);
+
+      try {
+        const result = await session.sendMessageStream(text);
+        let fullText = "";
+        for await (const chunk of result.stream) {
+          const chunkText = chunk.text();
+          if (chunkText) {
+            fullText += chunkText;
+            const currentFull = fullText;
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === aiMsgId ? { ...m, text: currentFull } : m
+              )
+            );
+          }
+        }
+      } catch (err) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === aiMsgId
+              ? { ...m, text: `Sorry, an error occurred. Please try again.\n\n${err}` }
+              : m
+          )
+        );
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [ensureSession]
+  );
+
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    chatSessionRef.current = null;
+    initializedForRef.current = null;
+  }, []);
+
+  return { messages, sendMessage, isGenerating, clearChat };
+}

@@ -44,6 +44,14 @@ export function Header() {
             >
               Explore
             </Link>
+            <Link
+              href="/chat"
+              className={`text-sm font-medium transition-colors ${
+                pathname === "/chat" ? "text-blue-400" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              Chat
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-4">

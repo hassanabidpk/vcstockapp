@@ -2,6 +2,7 @@
 import { usePathname } from "next/navigation";
 import { PortfolioProvider } from "@/context/PortfolioContext";
 import { Header } from "@/components/layout/Header";
+import { FloatingChatWidget } from "@/components/chat/FloatingChatWidget";
 
 export function ClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     <PortfolioProvider>
       <Header />
       <main>{children}</main>
+      <FloatingChatWidget />
     </PortfolioProvider>
   );
 }
