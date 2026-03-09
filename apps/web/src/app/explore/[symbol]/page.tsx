@@ -35,7 +35,7 @@ export default function StockDetailPage() {
 
   return (
     <div className="p-4">
-      <Link href="/explore" className="text-blue-400 text-sm hover:underline mb-4 inline-block">
+      <Link href="/explore" className="dark:text-blue-400 text-blue-600 text-sm hover:underline mb-4 inline-block">
         ← Back to Explore
       </Link>
 
@@ -44,7 +44,7 @@ export default function StockDetailPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold">{symbol}</h1>
-            <p className="text-slate-400">{quote?.name || symbol}</p>
+            <p className="dark:text-slate-400 text-slate-500">{quote?.name || symbol}</p>
             <div className="flex items-center gap-3 mt-3">
               <span className="text-3xl font-bold">
                 ${quote?.price?.toFixed(2) || "—"}
@@ -59,7 +59,7 @@ export default function StockDetailPage() {
               )}
             </div>
             {quote?.marketCap && (
-              <p className="text-sm text-slate-400 mt-2">
+              <p className="text-sm dark:text-slate-400 text-slate-500 mt-2">
                 Market Cap: ${(quote.marketCap / 1e9).toFixed(2)}B
                 {quote.pe && ` · P/E: ${quote.pe.toFixed(2)}`}
               </p>

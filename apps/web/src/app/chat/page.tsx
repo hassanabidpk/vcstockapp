@@ -27,7 +27,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-57px)]">
       {/* Top bar */}
-      <div className="border-b border-slate-800 px-6 py-3 flex items-center justify-between">
+      <div className="border-b dark:border-slate-800 border-slate-200 px-6 py-3 flex items-center justify-between transition-colors">
         <div className="flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -48,7 +48,7 @@ export default function ChatPage() {
         {messages.length > 0 && (
           <button
             onClick={clearChat}
-            className="text-xs text-slate-400 hover:text-white transition-colors"
+            className="text-xs dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
           >
             Clear chat
           </button>
@@ -97,7 +97,7 @@ function EmptyState({
         </svg>
       </div>
       <h2 className="text-xl font-bold mb-2">AI Portfolio Assistant</h2>
-      <p className="text-slate-400 text-sm mb-6 max-w-md">
+      <p className="dark:text-slate-400 text-slate-500 text-sm mb-6 max-w-md">
         Ask me anything about your portfolio, stocks, or market trends.
       </p>
       <div className="flex flex-wrap justify-center gap-2">
@@ -105,7 +105,7 @@ function EmptyState({
           <button
             key={s}
             onClick={() => onSuggestionClick(s)}
-            className="text-xs border border-slate-700 hover:border-slate-500 rounded-full px-4 py-2 text-slate-400 hover:text-white transition-colors"
+            className="text-xs border dark:border-slate-700 border-slate-300 dark:hover:border-slate-500 hover:border-slate-400 rounded-full px-4 py-2 dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
           >
             {s}
           </button>

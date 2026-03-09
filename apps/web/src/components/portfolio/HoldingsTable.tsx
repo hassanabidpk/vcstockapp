@@ -44,7 +44,7 @@ export function HoldingsTable({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <span className="text-sm text-slate-400">
+          <span className="text-sm dark:text-slate-400 text-slate-500">
             {formatCurrency(totalValue, sectionCurrency)}
           </span>
           <span className={`text-sm ${totalPL >= 0 ? "text-emerald-400" : "text-red-400"}`}>
@@ -57,7 +57,7 @@ export function HoldingsTable({
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-xs text-slate-500 border-b border-slate-800">
+            <tr className="text-xs dark:text-slate-500 text-slate-400 border-b dark:border-slate-800 border-slate-200">
               <th className="text-left pb-2 pr-4">Symbol</th>
               <th className="text-right pb-2 pr-4">Shares</th>
               <th className="text-right pb-2 pr-4">Avg Price</th>
@@ -81,19 +81,19 @@ export function HoldingsTable({
           <div
             key={h.id}
             onClick={() => setEditingHolding(h)}
-            className="bg-slate-900 border border-slate-800 rounded-lg p-3 cursor-pointer hover:border-slate-700"
+            className="dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-lg p-3 cursor-pointer dark:hover:border-slate-700 hover:border-slate-300 transition-colors"
           >
             <div className="flex justify-between items-start">
               <div>
                 <p className="font-semibold">
                   {h.symbol}
                   {h.platform && (
-                    <span className="text-[10px] ml-1.5 px-1.5 py-0.5 bg-slate-700 rounded text-slate-300 font-normal">
+                    <span className="text-[10px] ml-1.5 px-1.5 py-0.5 dark:bg-slate-700 bg-slate-200 rounded dark:text-slate-300 text-slate-600 font-normal">
                       {h.platform}
                     </span>
                   )}
                 </p>
-                <p className="text-xs text-slate-400">{h.name}</p>
+                <p className="text-xs dark:text-slate-400 text-slate-500">{h.name}</p>
               </div>
               <div className="text-right">
                 <p className="font-medium">
@@ -107,7 +107,7 @@ export function HoldingsTable({
                 </p>
               </div>
             </div>
-            <div className="flex justify-between mt-2 text-xs text-slate-400">
+            <div className="flex justify-between mt-2 text-xs dark:text-slate-400 text-slate-500">
               <span>{h.shares} shares @ {formatCurrency(h.avgBuyPrice, h.currency)}</span>
               <span>Value: {formatCurrency(h.marketValue, h.currency)}</span>
             </div>

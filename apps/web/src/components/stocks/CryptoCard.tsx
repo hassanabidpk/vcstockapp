@@ -26,22 +26,22 @@ export function CryptoCard({ crypto }: { crypto: CryptoPriceData }) {
   return (
     <Link
       href={`/explore/crypto/${crypto.id}`}
-      className="block bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-slate-600 transition-colors"
+      className="block dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-xl p-4 dark:hover:border-slate-600 hover:border-slate-300 transition-colors"
     >
       <div className="flex items-center justify-between">
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-white uppercase">{crypto.symbol}</p>
-          <p className="text-sm text-slate-400 mt-0.5 truncate">{formatName(crypto.id)}</p>
+          <p className="font-semibold dark:text-white text-slate-900 uppercase">{crypto.symbol}</p>
+          <p className="text-sm dark:text-slate-400 text-slate-500 mt-0.5 truncate">{formatName(crypto.id)}</p>
         </div>
         <div className="text-right ml-3">
-          <p className="font-semibold text-white">{formatPrice(crypto.price)}</p>
+          <p className="font-semibold dark:text-white text-slate-900">{formatPrice(crypto.price)}</p>
           <div className="mt-1">
             <Badge value={crypto.changePercent24h} />
           </div>
         </div>
       </div>
       {crypto.marketCap > 0 && (
-        <p className="text-xs text-slate-500 mt-2">MCap: {formatMarketCap(crypto.marketCap)}</p>
+        <p className="text-xs dark:text-slate-500 text-slate-400 mt-2">MCap: {formatMarketCap(crypto.marketCap)}</p>
       )}
     </Link>
   );

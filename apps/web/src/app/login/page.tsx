@@ -45,9 +45,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-8">
+        <div className="dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-xl p-8 transition-colors shadow-lg dark:shadow-none">
           <h1 className="text-2xl font-bold text-center mb-2">VC Stocks</h1>
-          <p className="text-slate-400 text-center text-sm mb-6">Sign in to your portfolio</p>
+          <p className="dark:text-slate-400 text-slate-500 text-center text-sm mb-6">Sign in to your portfolio</p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input

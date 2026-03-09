@@ -1,4 +1,5 @@
 "use client";
+import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "@/hooks/useChat";
 
 export function ChatMessageBubble({ message }: { message: ChatMessage }) {
@@ -39,13 +40,13 @@ function AiBubble({ text }: { text: string }) {
         </svg>
       </div>
       {/* Bubble */}
-      <div className="max-w-[78%] rounded-2xl rounded-tl-sm px-4 py-2.5 border border-slate-700 bg-slate-800/80">
+      <div className="max-w-[78%] rounded-2xl rounded-tl-sm px-4 py-2.5 border border-slate-700 dark:bg-slate-800/80 bg-slate-100">
         {isTyping ? (
           <TypingDots />
         ) : (
-          <p className="text-sm leading-relaxed text-slate-200 whitespace-pre-wrap select-text">
-            {text}
-          </p>
+          <div className="text-sm leading-relaxed dark:text-slate-200 text-slate-800 select-text prose prose-sm dark:prose-invert prose-headings:mt-3 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:my-2 prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-code:text-amber-400 prose-code:before:content-none prose-code:after:content-none prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-blockquote:border-blue-500 prose-strong:text-inherit max-w-none">
+            <ReactMarkdown>{text}</ReactMarkdown>
+          </div>
         )}
       </div>
     </div>

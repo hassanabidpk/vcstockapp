@@ -28,10 +28,10 @@ export function Modal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-slate-900 border border-slate-700 rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200 rounded-xl p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto transition-colors">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-xl">
+          <button onClick={onClose} className="dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 text-xl">
             ✕
           </button>
         </div>

@@ -60,10 +60,10 @@ export function EditHoldingModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Edit ${holding.symbol}`}>
       <div className="mb-4">
-        <p className="text-slate-400 text-sm">
+        <p className="dark:text-slate-400 text-slate-500 text-sm">
           {holding.name}
           {holding.platform && (
-            <span className="ml-2 px-1.5 py-0.5 bg-slate-700 rounded text-xs text-slate-300">
+            <span className="ml-2 px-1.5 py-0.5 dark:bg-slate-700 bg-slate-200 rounded text-xs dark:text-slate-300 text-slate-600">
               {holding.platform}
             </span>
           )}
@@ -110,7 +110,7 @@ export function EditHoldingModal({
             onChange={(e) => setManualPrice(e.target.value)}
             placeholder="Leave empty for live API price"
           />
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
             Set a manual price for stocks not supported by the free API (e.g. CRWV, GRAB, C6L.SI).
             Leave empty to use the live API price.
           </p>

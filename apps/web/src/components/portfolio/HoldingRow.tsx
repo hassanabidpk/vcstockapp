@@ -34,21 +34,21 @@ export function HoldingRow({
   return (
     <tr
       onClick={onClick}
-      className="border-b border-slate-800/50 cursor-pointer hover:bg-slate-800/30 transition-colors"
+      className="border-b dark:border-slate-800/50 border-slate-200 cursor-pointer dark:hover:bg-slate-800/30 hover:bg-slate-50 transition-colors"
     >
       <td className="py-3 pr-4">
         <div>
           <span className="font-medium">{h.symbol}</span>
-          <span className="text-xs text-slate-500 ml-2">{h.name}</span>
+          <span className="text-xs dark:text-slate-500 text-slate-400 ml-2">{h.name}</span>
           {h.platform && (
-            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 bg-slate-700 rounded text-slate-300">
+            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 dark:bg-slate-700 bg-slate-200 rounded dark:text-slate-300 text-slate-600">
               {h.platform}
             </span>
           )}
         </div>
       </td>
       <td className="text-right py-3 pr-4 tabular-nums">{h.shares}</td>
-      <td className="text-right py-3 pr-4 tabular-nums text-slate-400">{fmt(h.avgBuyPrice, h.currency)}</td>
+      <td className="text-right py-3 pr-4 tabular-nums dark:text-slate-400 text-slate-500">{fmt(h.avgBuyPrice, h.currency)}</td>
       <td className="text-right py-3 pr-4">
         <div className="tabular-nums">
           {fmt(h.currentPrice, h.currency)}

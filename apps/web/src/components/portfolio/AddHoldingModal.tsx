@@ -72,7 +72,7 @@ export function AddHoldingModal({
               className={`px-3 py-1.5 rounded-lg text-sm ${
                 assetType === type
                   ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400"
+                  : "dark:bg-slate-800 bg-slate-100 dark:text-slate-400 text-slate-600"
               }`}
             >
               {type === "us_stock" ? "US Stock" : type === "sg_stock" ? "SG Stock" : "Crypto"}
@@ -118,11 +118,11 @@ export function AddHoldingModal({
         </div>
 
         <div>
-          <label className="block text-sm text-slate-400 mb-1">Platform / App</label>
+          <label className="block text-sm dark:text-slate-400 text-slate-600 mb-1">Platform / App</label>
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full dark:bg-slate-800 bg-white border dark:border-slate-700 border-slate-300 rounded-lg px-3 py-2 dark:text-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
           >
             <option value="">-- Select Platform --</option>
             {PLATFORM_OPTIONS.map((p) => (

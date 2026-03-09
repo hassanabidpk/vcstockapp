@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useTheme } from "@/context/ThemeContext";
 
 interface SnapshotData {
   date: string;
@@ -24,7 +25,7 @@ function fmtSigned(v: number) {
   return `${v >= 0 ? "+" : ""}$${v.toFixed(2)}`;
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label, isDark }: any) {
   if (!active || !payload || !payload.length) return null;
   const d = payload[0].payload as ChartDataPoint;
   const plColor = d.totalPL >= 0 ? "#34d399" : "#f87171";
@@ -34,12 +35,13 @@ function CustomTooltip({ active, payload, label }: any) {
   return (
     <div
       style={{
-        backgroundColor: "#1e293b",
-        border: "1px solid #334155",
+        backgroundColor: isDark ? "#1e293b" : "#ffffff",
+        border: `1px solid ${isDark ? "#334155" : "#e2e8f0"}`,
         borderRadius: "8px",
         padding: "10px 14px",
-        color: "#f8fafc",
+        color: isDark ? "#f8fafc" : "#1e293b",
         fontSize: "13px",
+        boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.1)",
       }}
     >
       <p style={{ color: "#94a3b8", marginBottom: 6, fontSize: 11 }}>{label}</p>
@@ -56,9 +58,12 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function PortfolioPLChart({ data }: { data: SnapshotData[] }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
   if (!data || data.length === 0) {
     return (
-      <div className="h-48 flex items-center justify-center text-slate-500 text-sm">
+      <div className="h-48 flex items-center justify-center dark:text-slate-500 text-slate-400 text-sm">
         P/L trend chart will appear after daily snapshots are recorded
       </div>
     );
@@ -70,24 +75,26 @@ export function PortfolioPLChart({ data }: { data: SnapshotData[] }) {
   }));
 
   const isProfit = data.length > 0 && data[data.length - 1].totalPL >= 0;
+  const gridColor = isDark ? "#1e293b" : "#e2e8f0";
+  const tickColor = isDark ? "#64748b" : "#94a3b8";
 
   return (
     <ResponsiveContainer width="100%" height={200}>
       <AreaChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
         <XAxis
           dataKey="date"
-          tick={{ fill: "#64748b", fontSize: 11 }}
+          tick={{ fill: tickColor, fontSize: 11 }}
           tickFormatter={(d) => {
             const date = new Date(d);
             return `${date.getMonth() + 1}/${date.getDate()}`;
           }}
         />
         <YAxis
-          tick={{ fill: "#64748b", fontSize: 11 }}
+          tick={{ fill: tickColor, fontSize: 11 }}
           tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip isDark={isDark} />} />
         <Area
           type="monotone"
           dataKey="totalPL"

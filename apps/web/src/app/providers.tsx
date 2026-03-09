@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { PortfolioProvider } from "@/context/PortfolioContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Header } from "@/components/layout/Header";
 import { FloatingChatWidget } from "@/components/chat/FloatingChatWidget";
 
@@ -9,14 +10,20 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
 
   // Don't wrap login page with PortfolioProvider (it would make unauthenticated API calls)
   if (pathname === "/login") {
-    return <main>{children}</main>;
+    return (
+      <ThemeProvider>
+        <main>{children}</main>
+      </ThemeProvider>
+    );
   }
 
   return (
-    <PortfolioProvider>
-      <Header />
-      <main>{children}</main>
-      <FloatingChatWidget />
-    </PortfolioProvider>
+    <ThemeProvider>
+      <PortfolioProvider>
+        <Header />
+        <main>{children}</main>
+        <FloatingChatWidget />
+      </PortfolioProvider>
+    </ThemeProvider>
   );
 }

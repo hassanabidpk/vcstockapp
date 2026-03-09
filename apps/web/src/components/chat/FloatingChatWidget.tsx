@@ -17,15 +17,15 @@ export function FloatingChatWidget() {
   const { messages, sendMessage, isGenerating, clearChat } = useChat(portfolio);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Hide on certain pages
-  if (HIDDEN_PATHS.includes(pathname ?? "")) return null;
-
-  // Auto-scroll on new messages
+  // Auto-scroll on new messages — ALL hooks must be above any conditional return
   useEffect(() => {
     if (isOpen) {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages, isOpen]);
+
+  // Hide on certain pages — AFTER all hooks
+  if (HIDDEN_PATHS.includes(pathname ?? "")) return null;
 
   return (
     <>
@@ -50,9 +50,9 @@ export function FloatingChatWidget() {
 
       {/* Chat panel */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] dark:bg-slate-900 bg-white border dark:border-slate-700 border-slate-200 rounded-2xl shadow-2xl flex flex-col overflow-hidden transition-colors">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+          <div className="flex items-center justify-between px-4 py-3 border-b dark:border-slate-800 border-slate-200">
             <div className="flex items-center gap-2">
               <div
                 className="w-6 h-6 rounded-md flex items-center justify-center"
@@ -75,7 +75,7 @@ export function FloatingChatWidget() {
               {messages.length > 0 && (
                 <button
                   onClick={clearChat}
-                  className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                  className="p-1.5 dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
                   title="Clear chat"
                 >
                   <svg
@@ -95,7 +95,7 @@ export function FloatingChatWidget() {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white transition-colors"
+                className="p-1.5 dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
                 title="Close"
               >
                 <svg
@@ -131,7 +131,7 @@ export function FloatingChatWidget() {
                     <button
                       key={s}
                       onClick={() => sendMessage(s)}
-                      className="text-[11px] border border-slate-700 hover:border-slate-500 rounded-full px-3 py-1.5 text-slate-400 hover:text-white transition-colors"
+                      className="text-[11px] border dark:border-slate-700 border-slate-300 dark:hover:border-slate-500 hover:border-slate-400 rounded-full px-3 py-1.5 dark:text-slate-400 text-slate-500 dark:hover:text-white hover:text-slate-900 transition-colors"
                     >
                       {s}
                     </button>

@@ -40,7 +40,7 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="border-t border-slate-800 px-4 py-3 flex items-end gap-2"
+      className="border-t dark:border-slate-800 border-slate-200 px-4 py-3 flex items-end gap-2 transition-colors"
     >
       <textarea
         ref={textareaRef}
@@ -51,7 +51,7 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
         disabled={disabled}
         placeholder="Ask about your portfolio..."
         rows={1}
-        className="flex-1 resize-none bg-slate-900 border border-slate-700 rounded-2xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
+        className="flex-1 resize-none dark:bg-slate-900 bg-slate-50 border dark:border-slate-700 border-slate-300 rounded-2xl px-4 py-2.5 text-sm dark:text-slate-200 text-slate-800 dark:placeholder-slate-500 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50"
       />
       <button
         type="submit"

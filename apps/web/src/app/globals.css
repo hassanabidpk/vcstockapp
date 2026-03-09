@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
+/* Light theme (default) */
 :root {
+  --bg-primary: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent: #3b82f6;
+  --gain: #34d399;
+  --loss: #f87171;
+  --fair: #fbbf24;
+  --border: #e2e8f0;
+}
+
+/* Dark theme */
+.dark {
   --bg-primary: #0f172a;
   --bg-card: #1e293b;
   --bg-input: #334155;
@@ -11,11 +26,6 @@
   --loss: #f87171;
   --fair: #fbbf24;
   --border: #334155;
-}
-
-body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
 }
 
 /* Scrollbar */

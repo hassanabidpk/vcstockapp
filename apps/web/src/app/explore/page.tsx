@@ -78,7 +78,7 @@ export default function ExplorePage() {
       )}
 
       {/* ── Crypto Section ── */}
-      <div className="mt-10 border-t border-slate-800 pt-8">
+      <div className="mt-10 border-t dark:border-slate-800 border-slate-200 pt-8">
         <h2 className="text-2xl font-bold mb-6">Crypto</h2>
 
         <div className="mb-6">
@@ -120,7 +120,7 @@ export default function ExplorePage() {
         {/* Top cryptos (shown when no search query) */}
         {debouncedCryptoQuery.length < 2 && (
           <>
-            <p className="text-sm text-slate-400 mb-4">Top Cryptocurrencies</p>
+            <p className="text-sm dark:text-slate-400 text-slate-500 mb-4">Top Cryptocurrencies</p>
             {loadingCryptos ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -149,18 +149,18 @@ function CryptoSearchCard({ result }: { result: CryptoSearchData }) {
   return (
     <Link
       href={`/explore/crypto/${result.id}`}
-      className="block bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-slate-600 transition-colors"
+      className="block dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-xl p-4 dark:hover:border-slate-600 hover:border-slate-300 transition-colors"
     >
       <div className="flex items-center gap-3">
         {result.thumb && (
           <img src={result.thumb} alt="" className="w-8 h-8 rounded-full" />
         )}
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-white uppercase">{result.symbol}</p>
-          <p className="text-sm text-slate-400 mt-0.5 truncate">{result.name}</p>
+          <p className="font-semibold dark:text-white text-slate-900 uppercase">{result.symbol}</p>
+          <p className="text-sm dark:text-slate-400 text-slate-500 mt-0.5 truncate">{result.name}</p>
         </div>
         {result.marketCapRank && (
-          <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">
+          <span className="text-xs dark:text-slate-500 text-slate-400 dark:bg-slate-800 bg-slate-100 px-2 py-1 rounded">
             #{result.marketCapRank}
           </span>
         )}

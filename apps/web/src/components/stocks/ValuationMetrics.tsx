@@ -4,8 +4,8 @@ import type { ValuationData } from "@/lib/api-client";
 
 function MetricRow({ label, value }: { label: string; value: string | number | null }) {
   return (
-    <div className="flex justify-between py-1.5 border-b border-slate-800 last:border-0">
-      <span className="text-slate-400 text-sm">{label}</span>
+    <div className="flex justify-between py-1.5 border-b dark:border-slate-800 border-slate-200 last:border-0">
+      <span className="dark:text-slate-400 text-slate-500 text-sm">{label}</span>
       <span className="font-medium text-sm tabular-nums">{value ?? "N/A"}</span>
     </div>
   );
