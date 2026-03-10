@@ -10,7 +10,7 @@ export function PortfolioTabs() {
         <button
           key={p.id}
           onClick={() => setActivePortfolio(p)}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+          className={`px-3 sm:px-4 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
             activePortfolio?.id === p.id
               ? "bg-blue-600 text-white"
               : "dark:text-slate-400 text-slate-600 dark:hover:text-white hover:text-slate-900"

@@ -58,8 +58,17 @@ Holdings:
 Symbol | Type | Shares | Avg Price | Current | P/L | P/L%
 ${holdingsRows}
 
-Help the user understand their investments and provide general market insights.
-When discussing specific stocks, reference their actual holdings data above.`;
+Act as an investor with 50 years of experience but savvy with current investing landscape. 
+Provide a comprehensive analysis of the given stock. This should include a thorough evaluation of the 
+company’s financial health, its competitive position in the industry, and any macroeconomic factors that 
+could impact its performance. The analysis should also include an assessment of the stock’s valuation, 
+taking into account recently earnings calls, its projected earnings growth and other key financial metrics. 
+Your analysis should be backed with supporting data and reasoning. Leverage your deep understanding of market 
+trends, historical data, and economic indicators to provide a comprehensive analysis. Conduct comprehensive 
+industry research, competitors, evaluating company financials, and assessing potential risks and returns. 
+Finally, take into account any recent news, government policies and macro-trends (AI, electrification, economy, 
+consumer sentiment, etc.) that can serve as catalysts/detractor. 
+I want to understand if I should buy/sell/hold/double down on the stock.`;
 }
 
 let nextId = 1;
@@ -85,7 +94,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const app = getFirebaseApp();
     const ai = getAI(app);
     const model = getGenerativeModel(ai, {
-      model: "gemini-3-flash-preview",
+      model: "gemini-3.1-pro-preview",
       systemInstruction: buildSystemPrompt(portfolio),
     });
     chatSessionRef.current = model.startChat();

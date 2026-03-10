@@ -9,6 +9,42 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
+  // ---------- Body parser errors (payload too large, bad JSON) ----------
+  if ("type" in err) {
+    const errType = (err as Error & { type?: string; status?: number }).type;
+    const errStatus = (err as Error & { status?: number }).status;
+    if (errType === "entity.too.large") {
+      logger.warn("Request body too large");
+      res.status(413).json({
+        error: {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Request body exceeds the size limit.",
+        },
+      });
+      return;
+    }
+    if (errType === "entity.parse.failed") {
+      logger.warn("Malformed JSON in request body");
+      res.status(400).json({
+        error: {
+          code: "BAD_REQUEST",
+          message: "Malformed JSON in request body.",
+        },
+      });
+      return;
+    }
+    // Other Express body parser errors
+    if (errStatus && errStatus >= 400 && errStatus < 500) {
+      res.status(errStatus).json({
+        error: {
+          code: "BAD_REQUEST",
+          message: err.message || "Bad request.",
+        },
+      });
+      return;
+    }
+  }
+
   // ---------- Zod validation errors ----------
   if (err instanceof ZodError) {
     const details = err.errors.map((e) => ({

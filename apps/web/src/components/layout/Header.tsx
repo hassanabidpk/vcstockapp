@@ -24,40 +24,43 @@ export function Header() {
 
   return (
     <header className="border-b dark:border-slate-800 border-slate-200 px-4 py-3 dark:bg-slate-950 bg-white transition-colors">
+      {/* Top row: logo + actions */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold dark:text-white text-slate-900">
-            VC Stocks
+        <Link href="/dashboard" className="text-xl font-bold dark:text-white text-slate-900 shrink-0">
+          VC Stocks
+        </Link>
+        {/* Nav links — hidden on mobile, shown on md+ */}
+        <nav className="hidden md:flex gap-4">
+          <Link
+            href="/dashboard"
+            className={`text-sm font-medium transition-colors ${
+              pathname === "/dashboard" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Dashboard
           </Link>
-          <nav className="flex gap-4">
-            <Link
-              href="/dashboard"
-              className={`text-sm font-medium transition-colors ${
-                pathname === "/dashboard" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
-              }`}
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/explore"
-              className={`text-sm font-medium transition-colors ${
-                pathname?.startsWith("/explore") ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
-              }`}
-            >
-              Explore
-            </Link>
-            <Link
-              href="/chat"
-              className={`text-sm font-medium transition-colors ${
-                pathname === "/chat" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
-              }`}
-            >
-              Chat
-            </Link>
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <PortfolioTabs />
+          <Link
+            href="/explore"
+            className={`text-sm font-medium transition-colors ${
+              pathname?.startsWith("/explore") ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Explore
+          </Link>
+          <Link
+            href="/chat"
+            className={`text-sm font-medium transition-colors ${
+              pathname === "/chat" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Chat
+          </Link>
+        </nav>
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Portfolio tabs — hidden on mobile, shown on md+ */}
+          <div className="hidden md:block">
+            <PortfolioTabs />
+          </div>
           {/* Theme toggle */}
           <button
             onClick={toggleTheme}
@@ -81,6 +84,36 @@ export function Header() {
             Logout
           </button>
         </div>
+      </div>
+      {/* Bottom row on mobile: nav + portfolio tabs */}
+      <div className="flex md:hidden items-center justify-between mt-3 gap-3">
+        <nav className="flex gap-3">
+          <Link
+            href="/dashboard"
+            className={`text-sm font-medium transition-colors ${
+              pathname === "/dashboard" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/explore"
+            className={`text-sm font-medium transition-colors ${
+              pathname?.startsWith("/explore") ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Explore
+          </Link>
+          <Link
+            href="/chat"
+            className={`text-sm font-medium transition-colors ${
+              pathname === "/chat" ? "text-blue-400" : "text-slate-400 hover:dark:text-white hover:text-slate-900"
+            }`}
+          >
+            Chat
+          </Link>
+        </nav>
+        <PortfolioTabs />
       </div>
     </header>
   );
