@@ -1,6 +1,6 @@
 "use client";
 import ReactMarkdown from "react-markdown";
-import type { ChatMessage } from "@/hooks/useChat";
+import type { ChatMessage } from "@/context/ChatContext";
 
 export function ChatMessageBubble({ message }: { message: ChatMessage }) {
   if (message.isUser) {

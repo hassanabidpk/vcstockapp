@@ -1,6 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { PortfolioProvider } from "@/context/PortfolioContext";
+import { ChatProvider } from "@/context/ChatContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Header } from "@/components/layout/Header";
 import { FloatingChatWidget } from "@/components/chat/FloatingChatWidget";
@@ -20,9 +21,11 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <PortfolioProvider>
-        <Header />
-        <main>{children}</main>
-        <FloatingChatWidget />
+        <ChatProvider>
+          <Header />
+          <main>{children}</main>
+          <FloatingChatWidget />
+        </ChatProvider>
       </PortfolioProvider>
     </ThemeProvider>
   );

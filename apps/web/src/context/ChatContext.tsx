@@ -1,7 +1,16 @@
 "use client";
-import { useState, useCallback, useRef } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from "react";
 import { getFirebaseApp } from "@/lib/firebase";
 import { getAI, getGenerativeModel, type ChatSession } from "firebase/ai";
+import { usePortfolioContext } from "./PortfolioContext";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import type { PortfolioData } from "@/lib/api-client";
 
 export interface ChatMessage {
@@ -10,6 +19,20 @@ export interface ChatMessage {
   isUser: boolean;
   timestamp: Date;
 }
+
+interface ChatContextValue {
+  messages: ChatMessage[];
+  sendMessage: (text: string) => Promise<void>;
+  isGenerating: boolean;
+  clearChat: () => void;
+}
+
+const ChatContext = createContext<ChatContextValue>({
+  messages: [],
+  sendMessage: async () => {},
+  isGenerating: false,
+  clearChat: () => {},
+});
 
 function buildSystemPrompt(portfolio: PortfolioData): string {
   const s = portfolio.summary;
@@ -44,13 +67,15 @@ function createId(): string {
   return `msg_${nextId++}_${Date.now()}`;
 }
 
-export function useChat(portfolio: PortfolioData | undefined) {
+export function ChatProvider({ children }: { children: ReactNode }) {
+  const { activePortfolio } = usePortfolioContext();
+  const { portfolio } = usePortfolio(activePortfolio?.id ?? null);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const chatSessionRef = useRef<ChatSession | null>(null);
   const initializedForRef = useRef<string | null>(null);
 
-  // Lazily initialise when portfolio becomes available (or changes)
   const ensureSession = useCallback(() => {
     if (!portfolio) return null;
     if (initializedForRef.current === portfolio.id && chatSessionRef.current) {
@@ -60,7 +85,7 @@ export function useChat(portfolio: PortfolioData | undefined) {
     const app = getFirebaseApp();
     const ai = getAI(app);
     const model = getGenerativeModel(ai, {
-      model: "ggemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       systemInstruction: buildSystemPrompt(portfolio),
     });
     chatSessionRef.current = model.startChat();
@@ -126,5 +151,13 @@ export function useChat(portfolio: PortfolioData | undefined) {
     initializedForRef.current = null;
   }, []);
 
-  return { messages, sendMessage, isGenerating, clearChat };
+  return (
+    <ChatContext.Provider value={{ messages, sendMessage, isGenerating, clearChat }}>
+      {children}
+    </ChatContext.Provider>
+  );
+}
+
+export function useChatContext() {
+  return useContext(ChatContext);
 }

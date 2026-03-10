@@ -1,9 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { usePortfolioContext } from "@/context/PortfolioContext";
-import { usePortfolio } from "@/hooks/usePortfolio";
-import { useChat } from "@/hooks/useChat";
+import { useChatContext } from "@/context/ChatContext";
 import { ChatMessageBubble } from "./ChatMessageBubble";
 import { ChatInput } from "./ChatInput";
 
@@ -12,9 +10,7 @@ const HIDDEN_PATHS = ["/chat", "/login"];
 export function FloatingChatWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const { activePortfolio } = usePortfolioContext();
-  const { portfolio } = usePortfolio(activePortfolio?.id ?? null);
-  const { messages, sendMessage, isGenerating, clearChat } = useChat(portfolio);
+  const { messages, sendMessage, isGenerating, clearChat } = useChatContext();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll on new messages — ALL hooks must be above any conditional return
