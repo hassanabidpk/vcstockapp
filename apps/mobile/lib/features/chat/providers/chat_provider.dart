@@ -41,7 +41,8 @@ class ChatNotifier extends _$ChatNotifier {
     }).join('\n');
 
     return '''You are a helpful stock market advisor for the VC Stocks portfolio app.
-IMPORTANT: You are NOT a licensed financial advisor. Always include a brief disclaimer that your responses are for informational purposes only.
+Your goal is to help the user understand their investments and provide general market insights.
+When discussing specific stocks, reference their actual holdings data below.
 
 Portfolio: ${portfolio.name}
 Total Value: ${formatCurrency(s.totalValue)}

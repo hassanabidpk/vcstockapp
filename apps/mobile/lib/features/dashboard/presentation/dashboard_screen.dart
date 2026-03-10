@@ -5,6 +5,7 @@ import 'package:vc_stocks_mobile/features/auth/providers/auth_provider.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/holdings_list.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/portfolio_pl_chart.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/portfolio_summary_cards.dart';
+import 'package:vc_stocks_mobile/features/dashboard/data/portfolio_repository.dart';
 import 'package:vc_stocks_mobile/features/dashboard/providers/portfolio_detail_provider.dart';
 import 'package:vc_stocks_mobile/features/dashboard/providers/portfolio_history_provider.dart';
 import 'package:vc_stocks_mobile/features/dashboard/providers/portfolio_list_provider.dart';
@@ -176,6 +177,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           builder: (_) => EditHoldingSheet(
                             holding: holding,
                             onSaved: () {
+                              final id = ref.read(selectedPortfolioProvider);
+                              if (id != null) {
+                                ref.read(portfolioRepositoryProvider).clearDetailCache(id);
+                              }
                               ref.invalidate(portfolioDetailProvider);
                             },
                           ),
@@ -231,6 +236,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               builder: (_) => AddHoldingSheet(
                 portfolioId: selectedId,
                 onSaved: () {
+                  ref.read(portfolioRepositoryProvider).clearDetailCache(selectedId);
                   ref.invalidate(portfolioDetailProvider);
                 },
               ),

@@ -70,6 +70,11 @@ class PortfolioRepository {
     return getPortfolioRemote(id);
   }
 
+  /// Clear cached detail so next provider read fetches fresh from API.
+  Future<void> clearDetailCache(String id) async {
+    await _cache.delete(_portfolioDetailKey(id));
+  }
+
   // ---------------------------------------------------------------------------
   // Portfolio History
   // ---------------------------------------------------------------------------
