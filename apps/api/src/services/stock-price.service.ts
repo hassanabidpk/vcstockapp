@@ -275,13 +275,14 @@ export const stockPriceService = {
         logger.debug({ symbols: missingSG }, "SG stocks — skipping API fetch, use manual prices");
       }
 
-      // US stocks: Twelve Data primary, FMP fallback
-      for (const symbol of missingUS) {
-        let fetched = false;
+      // US stocks: Twelve Data batch primary, FMP individual fallback
+      const fetchedUS = new Set<string>();
 
-        if (hasTwelveData) {
-          try {
-            const td = await twelveDataService.getQuote(symbol);
+      if (hasTwelveData && missingUS.length > 0) {
+        try {
+          const tdQuotes = await twelveDataService.getBatchQuotes(missingUS);
+          const now = new Date().toISOString();
+          for (const td of tdQuotes) {
             await cacheService.setCachedPrice({
               symbol: td.symbol, assetType: "us_stock",
               currentPrice: td.price, change: td.change,
@@ -292,33 +293,34 @@ export const stockPriceService = {
               symbol: td.symbol, name: td.name, price: td.price,
               change: td.change, changePercent: td.changePercent,
               pe: null, eps: null, marketCap: td.marketCap,
-              priceUpdatedAt: new Date().toISOString(),
+              priceUpdatedAt: now,
             });
-            fetched = true;
-          } catch (err) {
-            logger.warn({ err, symbol }, "Twelve Data batch quote failed, trying FMP");
+            fetchedUS.add(td.symbol);
           }
+        } catch (err) {
+          logger.warn({ err }, "Twelve Data batch quotes failed entirely");
         }
+      }
 
-        if (!fetched) {
-          const fmp = await this._fetchQuoteFromFMP(symbol);
-          if (fmp) {
-            await cacheService.setCachedPrice({
-              symbol: fmp.symbol, assetType: "us_stock",
-              currentPrice: fmp.price, change: fmp.change,
-              changePercent: fmp.changePercent, pe: null, eps: null,
-              marketCap: fmp.marketCap, currency: "USD",
-            });
-            results.push({
-              symbol: fmp.symbol, name: fmp.name, price: fmp.price,
-              change: fmp.change, changePercent: fmp.changePercent,
-              pe: null, eps: null, marketCap: fmp.marketCap,
-              priceUpdatedAt: new Date().toISOString(),
-            });
-          }
+      // FMP fallback for any US stocks not fetched by Twelve Data
+      const stillMissingUS = missingUS.filter((s) => !fetchedUS.has(s));
+      for (const symbol of stillMissingUS) {
+        const fmp = await this._fetchQuoteFromFMP(symbol);
+        if (fmp) {
+          await cacheService.setCachedPrice({
+            symbol: fmp.symbol, assetType: "us_stock",
+            currentPrice: fmp.price, change: fmp.change,
+            changePercent: fmp.changePercent, pe: null, eps: null,
+            marketCap: fmp.marketCap, currency: "USD",
+          });
+          results.push({
+            symbol: fmp.symbol, name: fmp.name, price: fmp.price,
+            change: fmp.change, changePercent: fmp.changePercent,
+            pe: null, eps: null, marketCap: fmp.marketCap,
+            priceUpdatedAt: new Date().toISOString(),
+          });
         }
-
-        if (missingUS.indexOf(symbol) < missingUS.length - 1) {
+        if (stillMissingUS.indexOf(symbol) < stillMissingUS.length - 1) {
           await new Promise((r) => setTimeout(r, 300));
         }
       }

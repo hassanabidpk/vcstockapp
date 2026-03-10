@@ -62,21 +62,69 @@ interface TDSearchResult {
   }>;
 }
 
+function parseTDQuote(q: TDQuote) {
+  return {
+    symbol: q.symbol,
+    name: q.name,
+    price: parseFloat(q.close),
+    change: parseFloat(q.change),
+    changePercent: parseFloat(q.percent_change),
+    dayHigh: parseFloat(q.high),
+    dayLow: parseFloat(q.low),
+    volume: parseInt(q.volume, 10) || 0,
+    marketCap: 0, // Not available on Twelve Data free tier
+    exchange: q.exchange,
+  };
+}
+
 export const twelveDataService = {
   async getQuote(symbol: string) {
     const q = await tdFetch<TDQuote>(`/quote?symbol=${symbol}`);
-    return {
-      symbol: q.symbol,
-      name: q.name,
-      price: parseFloat(q.close),
-      change: parseFloat(q.change),
-      changePercent: parseFloat(q.percent_change),
-      dayHigh: parseFloat(q.high),
-      dayLow: parseFloat(q.low),
-      volume: parseInt(q.volume, 10) || 0,
-      marketCap: 0, // Not available on Twelve Data free tier
-      exchange: q.exchange,
-    };
+    return parseTDQuote(q);
+  },
+
+  /** Fetch multiple quotes in a single API call (max ~8 symbols per call on free tier) */
+  async getBatchQuotes(symbols: string[]) {
+    if (symbols.length === 0) return [];
+
+    // Twelve Data supports comma-separated symbols in one request
+    const results: Array<ReturnType<typeof parseTDQuote>> = [];
+
+    // Batch in groups of 8 to stay within free-tier limits per request
+    const batchSize = 8;
+    for (let i = 0; i < symbols.length; i += batchSize) {
+      const batch = symbols.slice(i, i + batchSize);
+      const joined = batch.join(",");
+
+      try {
+        if (batch.length === 1) {
+          // Single symbol returns a plain object
+          const q = await tdFetch<TDQuote>(`/quote?symbol=${joined}`);
+          results.push(parseTDQuote(q));
+        } else {
+          // Multiple symbols returns an object keyed by symbol
+          const data = await tdFetch<Record<string, TDQuote>>(`/quote?symbol=${joined}`);
+          for (const sym of batch) {
+            const q = data[sym];
+            if (q && q.close) {
+              results.push(parseTDQuote(q));
+            } else {
+              logger.warn({ symbol: sym }, "Twelve Data batch: missing or invalid quote");
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn({ err, symbols: batch }, "Twelve Data batch quote failed");
+      }
+
+      // Wait 60s between batches — free tier resets 8 credits every minute
+      if (i + batchSize < symbols.length) {
+        logger.info("Twelve Data: waiting 60s for rate limit reset before next batch");
+        await new Promise((r) => setTimeout(r, 60_000));
+      }
+    }
+
+    return results;
   },
 
   async getHistory(symbol: string, outputsize: number) {

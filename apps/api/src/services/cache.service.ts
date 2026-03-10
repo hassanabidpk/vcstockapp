@@ -9,19 +9,24 @@ function getTTLMinutes(assetType: string): number {
   return 5;
 }
 
+/** Check if a cached entry is still fresh using CURRENT market status */
+function isCacheFresh(entry: { assetType: string; fetchedAt: Date }): boolean {
+  const ttlMs = getTTLMinutes(entry.assetType) * 60 * 1000;
+  const age = Date.now() - entry.fetchedAt.getTime();
+  return age < ttlMs;
+}
+
 export const cacheService = {
   async getCachedPrice(symbol: string) {
     const cached = await priceCacheRepository.findBySymbol(symbol);
     if (!cached) return null;
-    if (new Date() > cached.expiresAt) return null; // expired
+    if (!isCacheFresh(cached)) return null; // expired based on current market status
     return cached;
   },
 
   async getCachedPrices(symbols: string[]) {
     const cached = await priceCacheRepository.findBySymbols(symbols);
-    const now = new Date();
-    const valid = cached.filter((c) => now <= c.expiresAt);
-    return valid;
+    return cached.filter((c) => isCacheFresh(c));
   },
 
   /** Return cached entries even if expired — used as fallback when FMP fails */
