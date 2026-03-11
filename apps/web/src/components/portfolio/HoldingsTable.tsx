@@ -1,121 +1,182 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { HoldingData } from "@/lib/api-client";
 import { HoldingRow } from "./HoldingRow";
 import { EditHoldingModal } from "./EditHoldingModal";
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
+type SortField =
+  | "symbol"
+  | "marketValue"
+  | "currentPrice"
+  | "todayPL"
+  | "profitLoss"
+  | "pctPortfolio";
+type SortDir = "asc" | "desc" | null;
 
 function formatCurrency(v: number, currency: string = "USD") {
   if (currency === "SGD") {
     const abs = Math.abs(v);
-    const formatted = abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatted = abs.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
     return `${v < 0 ? "-" : ""}S$${formatted}`;
   }
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(v);
 }
+
+function getSortValue(
+  h: HoldingData,
+  field: SortField,
+  portfolioTotalValue: number
+): number | string {
+  switch (field) {
+    case "symbol":
+      return h.name.toLowerCase();
+    case "marketValue":
+      return h.marketValue;
+    case "currentPrice":
+      return h.currentPrice;
+    case "todayPL":
+      return h.change * h.shares;
+    case "profitLoss":
+      return h.profitLoss;
+    case "pctPortfolio":
+      return portfolioTotalValue > 0
+        ? h.marketValue / portfolioTotalValue
+        : 0;
+    default:
+      return 0;
+  }
+}
+
+function SortArrow({ active, dir }: { active: boolean; dir: SortDir }) {
+  return (
+    <span className="inline-flex flex-col ml-1 leading-none text-[10px]">
+      <span className={active && dir === "asc" ? "text-amber-400" : "dark:text-slate-600 text-slate-300"}>
+        ▲
+      </span>
+      <span className={active && dir === "desc" ? "text-amber-400" : "dark:text-slate-600 text-slate-300"}>
+        ▼
+      </span>
+    </span>
+  );
+}
+
+const COLUMNS: { field: SortField; label: string }[] = [
+  { field: "symbol", label: "Symbol" },
+  { field: "marketValue", label: "MV/Qty" },
+  { field: "currentPrice", label: "Price/Cost" },
+  { field: "todayPL", label: "Today's P/L" },
+  { field: "profitLoss", label: "Total P/L" },
+  { field: "pctPortfolio", label: "% Portfolio" },
+];
 
 export function HoldingsTable({
   holdings,
   title,
+  portfolioTotalValue,
   onRefresh,
 }: {
   holdings: HoldingData[];
   title: string;
+  portfolioTotalValue: number;
   onRefresh: () => void;
 }) {
-  const [editingHolding, setEditingHolding] = useState<HoldingData | null>(null);
+  const [editingHolding, setEditingHolding] = useState<HoldingData | null>(
+    null
+  );
+  const [sortField, setSortField] = useState<SortField>("marketValue");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
+  const sectionCurrency = holdings[0]?.currency || "USD";
   const totalValue = holdings.reduce((s, h) => s + h.marketValue, 0);
   const totalPL = holdings.reduce((s, h) => s + h.profitLoss, 0);
-  const sectionCurrency = holdings[0]?.currency || "USD";
+
+  const sorted = useMemo(() => {
+    if (!sortDir) return holdings;
+    return [...holdings].sort((a, b) => {
+      const aVal = getSortValue(a, sortField, portfolioTotalValue);
+      const bVal = getSortValue(b, sortField, portfolioTotalValue);
+      const cmp =
+        typeof aVal === "string" && typeof bVal === "string"
+          ? aVal.localeCompare(bVal)
+          : (aVal as number) - (bVal as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [holdings, sortField, sortDir, portfolioTotalValue]);
+
+  function handleSort(field: SortField) {
+    if (sortField === field) {
+      if (sortDir === "desc") setSortDir("asc");
+      else if (sortDir === "asc") {
+        setSortDir("desc");
+        setSortField("marketValue");
+      } else {
+        setSortDir("desc");
+      }
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  }
 
   return (
     <div className="mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <span className="text-sm dark:text-slate-400 text-slate-500">
-            {formatCurrency(totalValue, sectionCurrency)}
-          </span>
-          <span className={`text-sm ${totalPL >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            {totalPL >= 0 ? "+" : ""}{formatCurrency(totalPL, sectionCurrency)}
-          </span>
-        </div>
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-3 px-1">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <span className="text-sm dark:text-slate-400 text-slate-500">
+          {formatCurrency(totalValue, sectionCurrency)}
+        </span>
+        <span
+          className={`text-sm ${
+            totalPL >= 0 ? "dark:text-emerald-400 text-emerald-500" : "dark:text-red-400 text-red-500"
+          }`}
+        >
+          {totalPL >= 0 ? "+" : ""}
+          {formatCurrency(totalPL, sectionCurrency)}
+        </span>
       </div>
 
-      {/* Desktop table */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full">
+      {/* Scrollable table */}
+      <div className="overflow-x-auto -mx-1">
+        <table className="w-full min-w-[640px]">
           <thead>
             <tr className="text-xs dark:text-slate-500 text-slate-400 border-b dark:border-slate-800 border-slate-200">
-              <th className="text-left pb-2 pr-4">Symbol</th>
-              <th className="text-right pb-2 pr-4">Shares</th>
-              <th className="text-right pb-2 pr-4">Avg Price</th>
-              <th className="text-right pb-2 pr-4">Current</th>
-              <th className="text-right pb-2 pr-4">Value</th>
-              <th className="text-right pb-2 pr-4">P/L</th>
-              <th className="text-right pb-2">P/L %</th>
+              {COLUMNS.map((col) => (
+                <th
+                  key={col.field}
+                  onClick={() => handleSort(col.field)}
+                  className={`pb-2 pr-4 cursor-pointer select-none hover:dark:text-slate-300 hover:text-slate-600 transition-colors ${
+                    col.field === "symbol"
+                      ? "text-left sticky left-0 dark:bg-slate-950 bg-white z-10"
+                      : "text-right"
+                  }`}
+                >
+                  {col.label}
+                  <SortArrow
+                    active={sortField === col.field}
+                    dir={sortField === col.field ? sortDir : null}
+                  />
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {holdings.map((h) => (
-              <HoldingRow key={h.id} holding={h} onClick={() => setEditingHolding(h)} />
+            {sorted.map((h) => (
+              <HoldingRow
+                key={h.id}
+                holding={h}
+                portfolioTotalValue={portfolioTotalValue}
+                onClick={() => setEditingHolding(h)}
+              />
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Mobile cards */}
-      <div className="md:hidden space-y-2">
-        {holdings.map((h) => (
-          <div
-            key={h.id}
-            onClick={() => setEditingHolding(h)}
-            className="dark:bg-slate-900 bg-white border dark:border-slate-800 border-slate-200 rounded-lg p-3 cursor-pointer dark:hover:border-slate-700 hover:border-slate-300 transition-colors"
-          >
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="font-semibold">
-                  {h.symbol}
-                  {h.platform && (
-                    <span className="text-[10px] ml-1.5 px-1.5 py-0.5 dark:bg-slate-700 bg-slate-200 rounded dark:text-slate-300 text-slate-600 font-normal">
-                      {h.platform}
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs dark:text-slate-400 text-slate-500">{h.name}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-medium">
-                  {formatCurrency(h.currentPrice, h.currency)}
-                  {h.manualPrice != null && (
-                    <span className="text-[10px] ml-1 text-amber-400 font-medium">M</span>
-                  )}
-                </p>
-                <p className={`text-sm ${h.profitLoss >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {h.profitLoss >= 0 ? "+" : ""}{formatCurrency(h.profitLoss, h.currency)} ({h.profitLossPercent >= 0 ? "+" : ""}{h.profitLossPercent.toFixed(2)}%)
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-between mt-2 text-xs dark:text-slate-400 text-slate-500">
-              <span>{h.shares} shares @ {formatCurrency(h.avgBuyPrice, h.currency)}</span>
-              <span>Value: {formatCurrency(h.marketValue, h.currency)}</span>
-            </div>
-            {h.priceUpdatedAt && (
-              <div className="text-[10px] text-slate-500 mt-1">Updated {timeAgo(h.priceUpdatedAt)}</div>
-            )}
-          </div>
-        ))}
       </div>
 
       {editingHolding && (
