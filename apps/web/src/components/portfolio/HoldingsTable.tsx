@@ -153,7 +153,7 @@ export function HoldingsTable({
                   onClick={() => handleSort(col.field)}
                   className={`pb-2 pr-4 cursor-pointer select-none hover:dark:text-slate-300 hover:text-slate-600 transition-colors ${
                     col.field === "symbol"
-                      ? "text-left sticky left-0 dark:bg-slate-950 bg-white z-10"
+                      ? "text-left sticky left-0 dark:bg-slate-950 bg-slate-50 z-10"
                       : "text-right"
                   }`}
                 >

@@ -169,6 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     // Holdings
                     HoldingsList(
                       byAssetType: portfolio.summary.byAssetType,
+                      portfolioTotalValue: portfolio.summary.totalValue,
                       onHoldingTap: (holding) {
                         showModalBottomSheet(
                           context: context,

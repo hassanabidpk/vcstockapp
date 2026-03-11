@@ -35,12 +35,17 @@ export function HoldingRow({
   return (
     <tr
       onClick={onClick}
-      className="border-b dark:border-slate-800 border-slate-200 cursor-pointer dark:hover:bg-slate-800/30 hover:bg-slate-50 transition-colors"
+      className="group border-b dark:border-slate-800 border-slate-200 cursor-pointer dark:hover:bg-slate-800/30 hover:bg-slate-50 transition-colors"
     >
-      {/* Symbol: Name / Ticker */}
-      <td className="py-3 pr-4 sticky left-0 dark:bg-slate-950 bg-white z-10">
+      {/* Symbol: Name / Ticker / Platform */}
+      <td className="py-3 pr-4 sticky left-0 dark:bg-slate-950 bg-slate-50 dark:group-hover:bg-slate-800/30 group-hover:bg-slate-100 z-10 transition-colors">
         <div className="font-semibold truncate">{h.name.split(/\s+/)[0]}</div>
         <div className="text-xs dark:text-slate-400 text-slate-500">{h.symbol}</div>
+        {h.platform && (
+          <span className="inline-block mt-0.5 px-1.5 py-px text-[10px] font-medium rounded dark:bg-slate-800 bg-slate-200 dark:text-slate-400 text-slate-500">
+            {h.platform}
+          </span>
+        )}
       </td>
 
       {/* MV / Qty */}
