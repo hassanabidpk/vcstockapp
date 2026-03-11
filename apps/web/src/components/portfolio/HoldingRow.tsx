@@ -39,7 +39,7 @@ export function HoldingRow({
     >
       {/* Symbol: Name / Ticker */}
       <td className="py-3 pr-4 sticky left-0 dark:bg-slate-950 bg-white z-10">
-        <div className="font-semibold truncate">{h.name}</div>
+        <div className="font-semibold truncate">{h.name.split(/\s+/)[0]}</div>
         <div className="text-xs dark:text-slate-400 text-slate-500">{h.symbol}</div>
       </td>
 

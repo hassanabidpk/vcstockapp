@@ -85,7 +85,7 @@ export const portfolioService = {
         id: h.id,
         portfolioId: h.portfolioId,
         symbol: h.symbol,
-        name: priceData?.name || h.name,
+        name: h.name || priceData?.name || h.symbol,
         assetType: h.assetType as "us_stock" | "sg_stock" | "crypto",
         shares: h.shares,
         avgBuyPrice: h.avgBuyPrice,
