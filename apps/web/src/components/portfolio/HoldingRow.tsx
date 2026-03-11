@@ -1,73 +1,87 @@
 "use client";
 import type { HoldingData } from "@/lib/api-client";
 
-function fmt(v: number, currency: string = "USD") {
-  if (currency === "SGD") {
-    const abs = Math.abs(v);
-    const formatted = abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return `${v < 0 ? "-" : ""}S$${formatted}`;
-  }
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(v);
+function fmtNum(v: number) {
+  return v.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+function sign(v: number) {
+  return v >= 0 ? "+" : "";
+}
+
+function plColor(v: number) {
+  if (v > 0) return "dark:text-emerald-400 text-emerald-500";
+  if (v < 0) return "dark:text-red-400 text-red-500";
+  return "dark:text-slate-400 text-slate-500";
 }
 
 export function HoldingRow({
   holding,
+  portfolioTotalValue,
   onClick,
 }: {
   holding: HoldingData;
+  portfolioTotalValue: number;
   onClick: () => void;
 }) {
   const h = holding;
-  const plColor = h.profitLoss >= 0 ? "text-emerald-400" : "text-red-400";
+  const todayPL = h.change * h.shares;
+  const pctPortfolio =
+    portfolioTotalValue > 0 ? (h.marketValue / portfolioTotalValue) * 100 : 0;
 
   return (
     <tr
       onClick={onClick}
-      className="border-b dark:border-slate-800/50 border-slate-200 cursor-pointer dark:hover:bg-slate-800/30 hover:bg-slate-50 transition-colors"
+      className="border-b dark:border-slate-800 border-slate-200 cursor-pointer dark:hover:bg-slate-800/30 hover:bg-slate-50 transition-colors"
     >
-      <td className="py-3 pr-4">
+      {/* Symbol: Name / Ticker */}
+      <td className="py-3 pr-4 sticky left-0 dark:bg-slate-950 bg-white z-10">
+        <div className="font-semibold truncate">{h.name}</div>
+        <div className="text-xs dark:text-slate-400 text-slate-500">{h.symbol}</div>
+      </td>
+
+      {/* MV / Qty */}
+      <td className="py-3 pr-4 text-right tabular-nums whitespace-nowrap">
+        <div className="font-medium">{fmtNum(h.marketValue)}</div>
+        <div className="text-xs dark:text-slate-400 text-slate-500">{h.shares}</div>
+      </td>
+
+      {/* Price / Cost */}
+      <td className="py-3 pr-4 text-right tabular-nums whitespace-nowrap">
+        <div>{fmtNum(h.currentPrice)}</div>
+        <div className="text-xs dark:text-slate-400 text-slate-500">
+          {fmtNum(h.avgBuyPrice)}
+        </div>
+      </td>
+
+      {/* Today's P/L */}
+      <td
+        className={`py-3 pr-4 text-right tabular-nums whitespace-nowrap ${plColor(todayPL)}`}
+      >
         <div>
-          <span className="font-medium">{h.symbol}</span>
-          <span className="text-xs dark:text-slate-500 text-slate-400 ml-2">{h.name}</span>
-          {h.platform && (
-            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 dark:bg-slate-700 bg-slate-200 rounded dark:text-slate-300 text-slate-600">
-              {h.platform}
-            </span>
-          )}
+          {sign(todayPL)}
+          {fmtNum(Math.abs(todayPL))}
         </div>
       </td>
-      <td className="text-right py-3 pr-4 tabular-nums">{h.shares}</td>
-      <td className="text-right py-3 pr-4 tabular-nums dark:text-slate-400 text-slate-500">{fmt(h.avgBuyPrice, h.currency)}</td>
-      <td className="text-right py-3 pr-4">
-        <div className="tabular-nums">
-          {fmt(h.currentPrice, h.currency)}
-          {h.manualPrice != null && (
-            <span className="text-[10px] ml-1 text-amber-400 font-medium">M</span>
-          )}
+
+      {/* Total P/L $ / % */}
+      <td className="py-3 pr-4 text-right tabular-nums whitespace-nowrap">
+        <div className={plColor(h.profitLoss)}>
+          {sign(h.profitLoss)}
+          {fmtNum(Math.abs(h.profitLoss))}
         </div>
-        {h.priceUpdatedAt && (
-          <div className="text-[10px] text-slate-500">{timeAgo(h.priceUpdatedAt)}</div>
-        )}
+        <div className={`text-xs ${plColor(h.profitLossPercent)}`}>
+          {sign(h.profitLossPercent)}
+          {h.profitLossPercent.toFixed(2)}%
+        </div>
       </td>
-      <td className="text-right py-3 pr-4 tabular-nums">{fmt(h.marketValue, h.currency)}</td>
-      <td className={`text-right py-3 pr-4 tabular-nums ${plColor}`}>
-        {h.profitLoss >= 0 ? "+" : ""}
-        {fmt(h.profitLoss, h.currency)}
-      </td>
-      <td className={`text-right py-3 tabular-nums ${plColor}`}>
-        {h.profitLossPercent >= 0 ? "+" : ""}
-        {h.profitLossPercent.toFixed(2)}%
+
+      {/* % Portfolio */}
+      <td className="py-3 text-right tabular-nums whitespace-nowrap">
+        <div>{pctPortfolio.toFixed(2)}%</div>
       </td>
     </tr>
   );
