@@ -63,6 +63,7 @@ export default function DashboardPage() {
             key={type}
             title={ASSET_TYPE_LABELS[type] || type}
             holdings={holdings}
+            portfolioTotalValue={portfolio.summary.totalValue}
             onRefresh={refresh}
           />
         );
