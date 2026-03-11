@@ -122,6 +122,14 @@ class HoldingDataCells extends StatelessWidget {
             children: [
               Text(formatNumber(h.currentPrice), style: numStyle),
               Text(formatNumber(h.avgBuyPrice), style: subStyle),
+              if (h.priceUpdatedAt != null && h.priceUpdatedAt!.isNotEmpty)
+                Text(
+                  timeAgo(h.priceUpdatedAt),
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: mutedColor.withValues(alpha: 0.7),
+                  ),
+                ),
             ],
           ),
         ),
