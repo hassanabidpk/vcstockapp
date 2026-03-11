@@ -1,5 +1,4 @@
 "use client";
-import { Card } from "@/components/ui/Card";
 import type { PortfolioData } from "@/lib/api-client";
 
 function formatCurrency(value: number, currency = "USD") {
@@ -10,9 +9,8 @@ function formatCurrency(value: number, currency = "USD") {
   }).format(value);
 }
 
-function formatPercent(value: number) {
-  const sign = value >= 0 ? "+" : "";
-  return `${sign}${value.toFixed(2)}%`;
+function formatSign(value: number) {
+  return value >= 0 ? "+" : "";
 }
 
 export function PortfolioSummary({
@@ -22,61 +20,42 @@ export function PortfolioSummary({
   summary: PortfolioData["summary"];
   usdToSgd?: number;
 }) {
+  const plColor =
+    summary.dayChange >= 0
+      ? "dark:text-emerald-400 text-emerald-500"
+      : "dark:text-red-400 text-red-500";
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <Card>
-        <p className="text-sm dark:text-slate-400 text-slate-500 mb-1">Total Value</p>
-        <p className="text-2xl font-bold">{formatCurrency(summary.totalValue)}</p>
-        {usdToSgd && (
-          <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-            ≈ S${(summary.totalValue * usdToSgd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </p>
-        )}
-        <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-          Cost basis: {formatCurrency(summary.totalCost)}
-        </p>
-      </Card>
-
-      <Card>
-        <p className="text-sm dark:text-slate-400 text-slate-500 mb-1">Total P/L</p>
-        <p
-          className={`text-2xl font-bold ${
-            summary.totalPL >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatCurrency(summary.totalPL)}
-        </p>
-        <p
-          className={`text-sm ${
-            summary.totalPLPercent >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatPercent(summary.totalPLPercent)}
+    <div className="flex items-start justify-between mb-6 px-1">
+      {/* Left: Net Assets */}
+      <div>
+        <p className="text-sm dark:text-slate-400 text-slate-500">Net Assets</p>
+        <p className="text-3xl font-bold tracking-tight">
+          {formatCurrency(summary.totalValue)}
         </p>
         {usdToSgd && (
-          <p className="text-xs dark:text-slate-500 text-slate-400 mt-1">
-            ≈ S${(summary.totalPL * usdToSgd).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <p className="text-xs dark:text-slate-500 text-slate-400 mt-0.5">
+            ≈ S$
+            {(summary.totalValue * usdToSgd).toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
         )}
-      </Card>
+      </div>
 
-      <Card>
-        <p className="text-sm dark:text-slate-400 text-slate-500 mb-1">Day Change</p>
-        <p
-          className={`text-2xl font-bold ${
-            summary.dayChange >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
+      {/* Right: Today's P/L */}
+      <div className="text-right">
+        <p className="text-sm dark:text-slate-400 text-slate-500">Today&apos;s P/L</p>
+        <p className={`text-xl font-bold ${plColor}`}>
+          {formatSign(summary.dayChange)}
           {formatCurrency(summary.dayChange)}
         </p>
-        <p
-          className={`text-sm ${
-            summary.dayChangePercent >= 0 ? "text-emerald-400" : "text-red-400"
-          }`}
-        >
-          {formatPercent(summary.dayChangePercent)}
+        <p className={`text-sm ${plColor}`}>
+          {formatSign(summary.dayChangePercent)}
+          {summary.dayChangePercent.toFixed(2)}%
         </p>
-      </Card>
+      </div>
     </div>
   );
 }
