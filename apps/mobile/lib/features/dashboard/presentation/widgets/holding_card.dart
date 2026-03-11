@@ -10,7 +10,11 @@ Color plColor(double v) {
   return AppColors.darkTextSecondary;
 }
 
-String plSign(double v) => v >= 0 ? '+' : '';
+String plSign(double v) {
+  if (v > 0) return '+';
+  if (v < 0) return '-';
+  return '';
+}
 
 String firstName(String name) => name.split(RegExp(r'\s+')).first;
 

@@ -20,9 +20,14 @@ export function PortfolioSummary({
   summary: PortfolioData["summary"];
   usdToSgd?: number;
 }) {
-  const plColor =
+  const dayPlColor =
     summary.dayChange >= 0
-      ? "dark:text-emerald-400 text-emerald-500"
+      ? "dark:text-emerald-500 text-emerald-600"
+      : "dark:text-red-400 text-red-500";
+
+  const totalPlColor =
+    summary.totalPL >= 0
+      ? "dark:text-emerald-500 text-emerald-600"
       : "dark:text-red-400 text-red-500";
 
   return (
@@ -44,17 +49,33 @@ export function PortfolioSummary({
         )}
       </div>
 
-      {/* Right: Today's P/L */}
-      <div className="text-right">
-        <p className="text-sm dark:text-slate-400 text-slate-500">Today&apos;s P/L</p>
-        <p className={`text-xl font-bold ${plColor}`}>
-          {formatSign(summary.dayChange)}
-          {formatCurrency(summary.dayChange)}
-        </p>
-        <p className={`text-sm ${plColor}`}>
-          {formatSign(summary.dayChangePercent)}
-          {summary.dayChangePercent.toFixed(2)}%
-        </p>
+      {/* Right: P/L columns */}
+      <div className="flex gap-6">
+        {/* Total P/L */}
+        <div className="text-right">
+          <p className="text-sm dark:text-slate-400 text-slate-500">Total P/L</p>
+          <p className={`text-xl font-bold ${totalPlColor}`}>
+            {formatSign(summary.totalPL)}
+            {formatCurrency(summary.totalPL)}
+          </p>
+          <p className={`text-sm ${totalPlColor}`}>
+            {formatSign(summary.totalPLPercent)}
+            {summary.totalPLPercent.toFixed(2)}%
+          </p>
+        </div>
+
+        {/* Today's P/L */}
+        <div className="text-right">
+          <p className="text-sm dark:text-slate-400 text-slate-500">Today&apos;s P/L</p>
+          <p className={`text-xl font-bold ${dayPlColor}`}>
+            {formatSign(summary.dayChange)}
+            {formatCurrency(summary.dayChange)}
+          </p>
+          <p className={`text-sm ${dayPlColor}`}>
+            {formatSign(summary.dayChangePercent)}
+            {summary.dayChangePercent.toFixed(2)}%
+          </p>
+        </div>
       </div>
     </div>
   );

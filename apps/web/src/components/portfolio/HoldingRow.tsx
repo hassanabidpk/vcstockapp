@@ -9,11 +9,13 @@ function fmtNum(v: number) {
 }
 
 function sign(v: number) {
-  return v >= 0 ? "+" : "";
+  if (v > 0) return "+";
+  if (v < 0) return "-";
+  return "";
 }
 
 function plColor(v: number) {
-  if (v > 0) return "dark:text-emerald-400 text-emerald-500";
+  if (v > 0) return "dark:text-emerald-500 text-emerald-600";
   if (v < 0) return "dark:text-red-400 text-red-500";
   return "dark:text-slate-400 text-slate-500";
 }

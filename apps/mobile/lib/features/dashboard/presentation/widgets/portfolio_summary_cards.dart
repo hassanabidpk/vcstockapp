@@ -16,9 +16,17 @@ class PortfolioSummaryCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final plColor =
+    final dayPlColor =
         summary.dayChange >= 0 ? AppColors.profit : AppColors.loss;
-    final sign = summary.dayChange >= 0 ? '+' : '';
+    final daySign = summary.dayChange >= 0 ? '+' : '';
+    final totalPlColor =
+        summary.totalPL >= 0 ? AppColors.profit : AppColors.loss;
+    final totalSign = summary.totalPL >= 0 ? '+' : '';
+
+    final labelStyle = TextStyle(
+      fontSize: 13,
+      color: isDark ? AppColors.darkTextSecondary : Colors.grey.shade600,
+    );
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -27,71 +35,89 @@ class PortfolioSummaryCards extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Left: Net Assets
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Net Assets',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : Colors.grey.shade600,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                formatCurrency(summary.totalValue),
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-              ),
-              if (usdToSgd != null) ...[
-                const SizedBox(height: 2),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Net Assets', style: labelStyle),
+                const SizedBox(height: 4),
                 Text(
-                  '≈ S\$${formatNumber(summary.totalValue * usdToSgd!)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? AppColors.darkTextMuted
-                        : Colors.grey.shade500,
+                  formatCurrency(summary.totalValue),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.5,
                   ),
                 ),
+                if (usdToSgd != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    '≈ S\$${formatNumber(summary.totalValue * usdToSgd!)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
-          // Right: Today's P/L
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          // Right: Total P/L + Today's P/L
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Today's P/L",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark
-                      ? AppColors.darkTextSecondary
-                      : Colors.grey.shade600,
-                ),
+              // Total P/L
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Total P/L', style: labelStyle),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$totalSign${formatCurrency(summary.totalPL)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: totalPlColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${totalSign}${summary.totalPLPercent.toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: totalPlColor,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                '$sign${formatCurrency(summary.dayChange)}',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: plColor,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                formatPercent(summary.dayChangePercent),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: plColor,
-                ),
+              const SizedBox(width: 16),
+              // Today's P/L
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text("Today's P/L", style: labelStyle),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$daySign${formatCurrency(summary.dayChange)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: dayPlColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    formatPercent(summary.dayChangePercent),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: dayPlColor,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

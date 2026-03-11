@@ -134,7 +134,7 @@ export function HoldingsTable({
         </span>
         <span
           className={`text-sm ${
-            totalPL >= 0 ? "dark:text-emerald-400 text-emerald-500" : "dark:text-red-400 text-red-500"
+            totalPL >= 0 ? "dark:text-emerald-500 text-emerald-600" : "dark:text-red-400 text-red-500"
           }`}
         >
           {totalPL >= 0 ? "+" : ""}

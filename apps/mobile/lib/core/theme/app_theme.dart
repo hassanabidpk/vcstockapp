@@ -13,7 +13,7 @@ class AppColors {
   // Shared accent colors
   static const primary = Color(0xFF2563EB); // blue-600
   static const primaryLight = Color(0xFF3B82F6); // blue-500
-  static const profit = Color(0xFF34D399); // emerald-400
+  static const profit = Color(0xFF10B981); // emerald-500
   static const loss = Color(0xFFF87171); // red-400
   static const amber = Color(0xFFFBBF24); // amber-400
   static const yellow = Color(0xFFFACC15); // yellow-400
