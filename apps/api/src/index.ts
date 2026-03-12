@@ -9,6 +9,8 @@ const app = createApp();
 if (!process.env.VERCEL) {
   app.listen(config.port, () => {
     logger.info(`Server running on port ${config.port} [${config.nodeEnv}]`);
+    const dbHost = new URL(process.env.TURSO_DATABASE_URL || "").hostname;
+    logger.info(`Database: ${dbHost} [${config.nodeEnv}]`);
 
     // Take snapshots on startup so the P/L chart has data without waiting for cron
     portfolioService.listAll().then(async (portfolios) => {

@@ -87,20 +87,28 @@ pnpm install
 **Backend** — copy and edit `apps/api/.env.example`:
 
 ```bash
-cp apps/api/.env.example apps/api/.env
+cp apps/api/.env.example apps/api/.env.local
 ```
+
+Edit `apps/api/.env.local` with your dev database credentials:
 
 ```env
 PORT=4000
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:3000
-DATABASE_URL=file:./dev.db
-TURSO_DATABASE_URL=libsql://your-db.turso.io
-TURSO_AUTH_TOKEN=your_token
-JWT_SECRET=change-me-in-production
-CRON_SECRET=change-me-in-production
+
+# Dev database (separate from production)
+TURSO_DATABASE_URL=libsql://dev-vc-stock-app-isearch.aws-ap-south-1.turso.io
+TURSO_AUTH_TOKEN=your_dev_token
+DATABASE_URL=libsql://dev-vc-stock-app-isearch.aws-ap-south-1.turso.io
+
+JWT_SECRET=dev-jwt-secret
+CRON_SECRET=dev-cron-secret
 FMP_API_KEY=your_fmp_api_key
+FMP_BASE_URL=https://financialmodelingprep.com/stable
 TWELVE_DATA_API_KEY=your_twelve_data_key
+TWELVE_DATA_BASE_URL=https://api.twelvedata.com
+COINGECKO_BASE_URL=https://api.coingecko.com/api/v3
 SEED_USERNAME=admin
 SEED_PASSWORD=change_me
 ```
@@ -114,15 +122,19 @@ cp apps/web/.env.local.example apps/web/.env.local
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
 API_BASE_URL=http://localhost:4000
-CRON_SECRET=change-me-in-production
+CRON_SECRET=dev-cron-secret
 ```
 
 ### 3. Set up the database
 
+The project uses Turso (LibSQL) with separate databases for dev and production. Since Prisma CLI doesn't support `libsql://` URLs directly, use the Turso migration script:
+
 ```bash
-pnpm run db:generate    # Generate Prisma client
-pnpm run db:migrate     # Run migrations
-pnpm run db:seed        # Seed default user & portfolios
+# Export env vars and run migrations
+export $(grep -v '^#' apps/api/.env.local | xargs) && cd packages/db && npx tsx prisma/migrate-turso.ts
+
+# Seed with sample data
+cd ../.. && export $(grep -v '^#' apps/api/.env.local | xargs) && pnpm db:seed
 ```
 
 ### 4. Start development servers
@@ -246,35 +258,18 @@ pnpm run db:studio      # Open Prisma Studio to browse data
 
 ---
 
-## Deployment
+## Environments
 
-### Frontend (Vercel)
+| Environment | API | Web | Database |
+|-------------|-----|-----|----------|
+| Development | localhost:4000 | localhost:3000 | `dev-vc-stock-app` (Turso) |
+| Production | Vercel | Vercel | `vc-stocks` (Turso) |
 
-The Next.js app deploys to Vercel. Set these environment variables in your Vercel project settings:
+- **Dev** config lives in `.env.local` files (gitignored)
+- **Prod** config is set via the Vercel dashboard (never committed)
+- The API logs which database it's connected to at startup
 
-| Variable | Value |
-|----------|-------|
-| `API_BASE_URL` | Your backend URL |
-| `CRON_SECRET` | Shared secret for cron job authentication |
-
-A daily cron job is configured in `vercel.json` to trigger portfolio snapshots at midnight UTC:
-
-```json
-{
-  "crons": [{ "path": "/api/cron/snapshots", "schedule": "0 0 * * *" }]
-}
-```
-
-### Backend
-
-The Express API can be deployed to any Node.js hosting (Railway, Render, Fly.io, etc.).
-
-Required production env vars:
-- `DATABASE_URL` / `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
-- `JWT_SECRET` (strong random secret)
-- `CRON_SECRET` (must match frontend)
-- `CORS_ORIGIN` (your frontend URL)
-- `FMP_API_KEY`, `TWELVE_DATA_API_KEY`
+See [docs/DEPLOY.md](docs/DEPLOY.md) for full deployment instructions.
 
 ---
 
