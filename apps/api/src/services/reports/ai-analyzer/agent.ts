@@ -43,11 +43,18 @@ export const aiAnalyzerService = {
     try {
       const { LlmAgent, Runner, InMemorySessionService, GOOGLE_SEARCH } = await import("@google/adk");
 
-      // Decode base64 credentials and set as env var for Google Auth
+      // Decode base64 credentials and write to temp file for Google Auth
       const credentialsJson = Buffer.from(config.googleCredentialsJson, "base64").toString("utf-8");
-      const credentials = JSON.parse(credentialsJson);
+      JSON.parse(credentialsJson); // validate it's valid JSON
 
-      // Set credentials for Google Cloud auth
+      const os = await import("node:os");
+      const fs = await import("node:fs");
+      const path = await import("node:path");
+      const tmpFile = path.join(os.tmpdir(), `gcp-creds-${Date.now()}.json`);
+      fs.writeFileSync(tmpFile, credentialsJson, { mode: 0o600 });
+
+      // Set env vars for Google Cloud auth
+      process.env.GOOGLE_APPLICATION_CREDENTIALS = tmpFile;
       process.env.GOOGLE_CLOUD_PROJECT = config.googleCloudProject;
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
 
@@ -119,6 +126,16 @@ export const aiAnalyzerService = {
     } catch (err) {
       logger.error({ err }, "AIAnalyzer: failed");
       return null;
+    } finally {
+      // Clean up temp credentials file
+      try {
+        const tmpFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        if (tmpFile?.includes("gcp-creds-")) {
+          const fs = await import("node:fs");
+          fs.unlinkSync(tmpFile);
+          delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        }
+      } catch { /* ignore cleanup errors */ }
     }
   },
 };
