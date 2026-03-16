@@ -9,6 +9,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@google-cloud/vertexai": "^1.10.0",
+    "@google/adk": "^0.5.0",
     "@vc/db": "workspace:*",
     "@vc/types": "workspace:*",
     "@vc/utils": "workspace:*",
