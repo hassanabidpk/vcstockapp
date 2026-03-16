@@ -1,157 +1,228 @@
-import type { CollectedData, CollectedHolding, AnalysisResult, FormattedReport } from "./types.js";
+import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, FormattedReport } from "./types.js";
 
 const MAX_MSG_LEN = 4096;
-const SEPARATOR = "─────────────────────";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function esc(text: string): string {
   return text.replace(/([_*\[\]()~`>#+\-=|{}.!\\])/g, "\\$1");
 }
 
 function sign(v: number): string {
-  if (v > 0) return "\\+";
-  if (v < 0) return "\\-";
-  return "";
+  return v > 0 ? "\\+" : v < 0 ? "\\-" : "";
 }
 
 function plEmoji(v: number): string {
-  if (v > 0) return "🟢";
-  if (v < 0) return "🔴";
-  return "⚪";
+  return v > 0 ? "🟢" : v < 0 ? "🔴" : "⚪";
 }
 
-function fmtNum(v: number): string {
-  return esc(
-    Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  );
+function fmt(v: number, compact = false): string {
+  const abs = Math.abs(v);
+  if (compact) {
+    if (abs >= 1_000_000) return esc((abs / 1_000_000).toFixed(1)) + "M";
+    if (abs >= 10_000) return esc((abs / 1_000).toFixed(1)) + "K";
+    if (abs >= 1_000) return esc((abs / 1_000).toFixed(2)) + "K";
+  }
+  return esc(abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 }
 
-function fmtPct(v: number): string {
+function pct(v: number): string {
   return esc(Math.abs(v).toFixed(2));
 }
 
-function fmtCompact(v: number): string {
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) return esc((abs / 1_000_000).toFixed(2)) + "M";
-  if (abs >= 1_000) return esc((abs / 1_000).toFixed(2)) + "K";
-  return fmtNum(v);
+function fxConvert(usd: number, rate: number): string {
+  return fmt(usd * rate, true);
 }
 
-function plLine(label: string, value: number, pct: number): string {
-  return `${plEmoji(value)} ${label}: \`${sign(value)}$${fmtNum(value)} \\(${sign(pct)}${fmtPct(pct)}%\\)\``;
+/** Currency label for display */
+function currLabel(currency: string): string {
+  switch (currency) {
+    case "SGD": return "S$";
+    case "HKD": return "HK$";
+    default: return "$";
+  }
 }
 
-function buildPortfolioSection(p: CollectedData["portfolios"][0], isWeekly: boolean, usdToSgd: number): string {
-  const holdingCount = p.holdings.length;
-  const assetsSgd = p.netAssets * usdToSgd;
-  const plSgd = p.totalPL * usdToSgd;
+function formatSGTTime(): string {
+  return new Date().toLocaleString("en-SG", {
+    timeZone: "Asia/Singapore",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+// ── Sections ─────────────────────────────────────────────────────────────────
+
+function buildDailyPortfolio(p: CollectedPortfolio, usdToSgd: number): string {
+  const n = p.holdings.length;
+  const assetsSgd = fxConvert(p.netAssets, usdToSgd);
+  const plSgd = fxConvert(p.totalPL, usdToSgd);
+
   const lines = [
-    `💼 *${esc(p.name)}* \\(${holdingCount} holdings\\)`,
-    `   Assets: \`$${fmtCompact(p.netAssets)}\` \\(S$${fmtCompact(assetsSgd)}\\)`,
-    `   Cost: \`$${fmtCompact(p.totalCost)}\``,
-    `   ${plLine("Total P/L", p.totalPL, p.totalPLPercent)} \\(S$${fmtCompact(plSgd)}\\)`,
+    `💼 *${esc(p.name)}* \\(${n}\\)`,
+    `  💰 \`$${fmt(p.netAssets, true)}\` \\(S$${assetsSgd}\\)`,
+    `  ${plEmoji(p.totalPL)} P/L: \`${sign(p.totalPL)}$${fmt(p.totalPL, true)}\` ${sign(p.totalPLPercent)}${pct(p.totalPLPercent)}% \\(S$${plSgd}\\)`,
+    `  📈 Today: ${plEmoji(p.todayPL)} \`${sign(p.todayPL)}$${fmt(p.todayPL, true)}\` ${sign(p.todayPLPercent)}${pct(p.todayPLPercent)}%`,
   ];
 
-  if (isWeekly && p.weeklyChange !== undefined) {
-    const weekSgd = p.weeklyChange * usdToSgd;
-    lines.push(`   ${plLine("Week", p.weeklyChange, p.weeklyChangePercent!)} \\(S$${fmtCompact(weekSgd)}\\)`);
-  } else {
-    lines.push(`   ${plLine("Today", p.todayPL, p.todayPLPercent)}`);
+  return lines.join("\n");
+}
+
+function buildWeeklyPortfolio(p: CollectedPortfolio, usdToSgd: number): string {
+  const n = p.holdings.length;
+  const assetsSgd = fxConvert(p.netAssets, usdToSgd);
+  const plSgd = fxConvert(p.totalPL, usdToSgd);
+
+  const lines = [
+    `💼 *${esc(p.name)}* \\(${n}\\)`,
+    `  💰 \`$${fmt(p.netAssets, true)}\` \\(S$${assetsSgd}\\)`,
+    `  ${plEmoji(p.totalPL)} Total: \`${sign(p.totalPL)}$${fmt(p.totalPL, true)}\` ${sign(p.totalPLPercent)}${pct(p.totalPLPercent)}% \\(S$${plSgd}\\)`,
+  ];
+
+  if (p.weeklyChange !== undefined) {
+    const weekSgd = fxConvert(p.weeklyChange, usdToSgd);
+    lines.push(
+      `  📅 Week: ${plEmoji(p.weeklyChange)} \`${sign(p.weeklyChange)}$${fmt(p.weeklyChange, true)}\` ${sign(p.weeklyChangePercent!)}${pct(p.weeklyChangePercent!)}% \\(S$${weekSgd}\\)`,
+    );
   }
 
-  // For weekly: show top 3 best/worst holdings by total P/L %
-  if (isWeekly && p.holdings.length > 0) {
-    const sorted = [...p.holdings].sort((a, b) => b.profitLossPercent - a.profitLossPercent);
-    const best = sorted.filter((h) => h.profitLossPercent > 0).slice(0, 3);
-    const worst = sorted.filter((h) => h.profitLossPercent < 0).slice(-3).reverse();
+  // Top 5 holdings by P/L (mix of best and worst)
+  if (p.holdings.length > 0) {
+    const active = p.holdings.filter((h) => h.shares > 0);
+    const sorted = [...active].sort((a, b) => b.profitLossPercent - a.profitLossPercent);
+    const top = sorted.slice(0, 3);
+    const bottom = sorted.filter((h) => h.profitLossPercent < 0).slice(-2).reverse();
 
-    if (best.length > 0) {
-      lines.push(`   _Best:_ ${best.map((h) => `\`${esc(h.symbol)}\` ${sign(h.profitLossPercent)}${fmtPct(h.profitLossPercent)}%`).join(", ")}`);
+    if (top.length > 0) {
+      lines.push(`  🏅 ${top.map((h) => `\`${esc(h.symbol)}\` ${sign(h.profitLossPercent)}${pct(h.profitLossPercent)}%`).join(" ")}`);
     }
-    if (worst.length > 0) {
-      lines.push(`   _Worst:_ ${worst.map((h) => `\`${esc(h.symbol)}\` ${sign(h.profitLossPercent)}${fmtPct(h.profitLossPercent)}%`).join(", ")}`);
+    if (bottom.length > 0) {
+      lines.push(`  📉 ${bottom.map((h) => `\`${esc(h.symbol)}\` ${sign(h.profitLossPercent)}${pct(h.profitLossPercent)}%`).join(" ")}`);
     }
   }
 
   return lines.join("\n");
 }
 
-
-function buildMoversSection(portfolios: CollectedData["portfolios"], isWeekly: boolean): string {
-  // Gather all holdings across portfolios
-  const allHoldings: CollectedHolding[] = [];
+function buildMovers(portfolios: CollectedPortfolio[], isWeekly: boolean): string {
+  const all: CollectedHolding[] = [];
   for (const p of portfolios) {
-    for (const h of p.holdings) {
-      allHoldings.push(h);
-    }
+    for (const h of p.holdings) all.push(h);
   }
+  if (all.length === 0) return "";
 
-  if (allHoldings.length === 0) return "";
-
-  // Sort by daily change percent for daily, total P/L % for weekly
-  const sortKey = isWeekly
+  const key = isWeekly
     ? (h: CollectedHolding) => h.profitLossPercent
     : (h: CollectedHolding) => h.changePercent;
 
-  const sorted = [...allHoldings].sort((a, b) => sortKey(b) - sortKey(a));
+  const sorted = [...all].sort((a, b) => key(b) - key(a));
+  // Deduplicate by symbol (same stock in multiple portfolios)
+  const seen = new Set<string>();
+  const unique = sorted.filter((h) => {
+    if (seen.has(h.symbol)) return false;
+    seen.add(h.symbol);
+    return true;
+  });
 
-  const gainers = sorted.filter((h) => sortKey(h) > 0).slice(0, 3);
-  const losers = sorted.filter((h) => sortKey(h) < 0).slice(-3).reverse();
+  const gainers = unique.filter((h) => key(h) > 0).slice(0, 3);
+  const losers = unique.filter((h) => key(h) < 0).slice(-3).reverse();
 
-  const title = isWeekly ? "🏆 *BEST & WORST PERFORMERS*" : "🔥 *TOP MOVERS*";
+  if (gainers.length === 0 && losers.length === 0) return "";
+
+  const title = isWeekly ? "🏆 *TOP & BOTTOM*" : "🔥 *MOVERS*";
   const lines: string[] = [title];
 
-  if (gainers.length > 0) {
-    for (const h of gainers) {
-      const val = sortKey(h);
-      const plUsd = isWeekly ? ` ${sign(h.profitLoss)}$${fmtCompact(h.profitLoss)}` : "";
-      lines.push(`   🟢 \`${esc(h.symbol)}\` ${sign(val)}${fmtPct(val)}%${plUsd} \\($${fmtNum(h.currentPrice)}\\)`);
-    }
+  for (const h of gainers) {
+    const v = key(h);
+    lines.push(`🟢 \`${esc(h.symbol)}\` ${sign(v)}${pct(v)}% \\(${currLabel(h.currency)}${fmt(h.currentPrice)}\\)`);
   }
-
-  if (losers.length > 0) {
-    for (const h of losers) {
-      const val = sortKey(h);
-      const plUsd = isWeekly ? ` ${sign(h.profitLoss)}$${fmtCompact(h.profitLoss)}` : "";
-      lines.push(`   🔴 \`${esc(h.symbol)}\` ${sign(val)}${fmtPct(val)}%${plUsd} \\($${fmtNum(h.currentPrice)}\\)`);
-    }
-  }
-
-  if (gainers.length === 0 && losers.length === 0) {
-    lines.push(`   No significant moves`);
+  for (const h of losers) {
+    const v = key(h);
+    lines.push(`🔴 \`${esc(h.symbol)}\` ${sign(v)}${pct(v)}% \\(${currLabel(h.currency)}${fmt(h.currentPrice)}\\)`);
   }
 
   return lines.join("\n");
 }
 
-function buildAISection(analysis: AnalysisResult, isWeekly: boolean): string {
-  const sections: string[] = [];
+function buildAssetBreakdown(portfolios: CollectedPortfolio[]): string {
+  const totals: Record<string, { value: number; pl: number }> = {};
+  for (const p of portfolios) {
+    for (const h of p.holdings) {
+      const t = h.assetType;
+      if (!totals[t]) totals[t] = { value: 0, pl: 0 };
+      totals[t].value += h.marketValue;
+      totals[t].pl += h.profitLoss;
+    }
+  }
 
-  // Trim AI text to stay within budget — ~600 chars per section max
-  const trim = (text: string, max: number): string => {
-    if (text.length <= max) return text;
-    return text.substring(0, max - 3) + "...";
+  const labels: Record<string, string> = {
+    us_stock: "🇺🇸US",
+    sg_stock: "🇸🇬SG",
+    hk_stock: "🇭🇰HK",
+    crypto: "🪙Crypto",
   };
 
-  sections.push(`📈 *MARKET OVERVIEW*\n${esc(trim(analysis.marketOverview, 500))}`);
-  sections.push(`🏆 *AI TOP MOVERS*\n${esc(trim(analysis.topMovers, 400))}`);
-
-  if (isWeekly && analysis.sgMarket) {
-    sections.push(`🇸🇬 *SG MARKET*\n${esc(trim(analysis.sgMarket, 300))}`);
-  }
-  if (isWeekly && analysis.cryptoMarket) {
-    sections.push(`🪙 *CRYPTO*\n${esc(trim(analysis.cryptoMarket, 300))}`);
+  const order = ["us_stock", "sg_stock", "hk_stock", "crypto"];
+  const parts: string[] = [];
+  for (const type of order) {
+    const t = totals[type];
+    if (!t || t.value === 0) continue;
+    parts.push(`${labels[type]} \`$${fmt(t.value, true)}\` ${plEmoji(t.pl)}${sign(t.pl)}$${fmt(t.pl, true)}`);
   }
 
-  sections.push(`💡 *INSIGHTS*\n${esc(trim(analysis.insights, 500))}`);
-
-  return sections.join("\n\n");
+  if (parts.length === 0) return "";
+  return `📊 *BREAKDOWN*\n${parts.join("\n")}`;
 }
+
+function buildAI(analysis: AnalysisResult, budget: number): string {
+  const sections: { emoji: string; title: string; text: string; priority: number }[] = [
+    { emoji: "📈", title: "MARKET", text: analysis.marketOverview, priority: 1 },
+    { emoji: "💡", title: "INSIGHTS", text: analysis.insights, priority: 2 },
+  ];
+
+  if (analysis.sgMarket) {
+    sections.push({ emoji: "🇸🇬", title: "SG", text: analysis.sgMarket, priority: 3 });
+  }
+  if (analysis.cryptoMarket) {
+    sections.push({ emoji: "🪙", title: "CRYPTO", text: analysis.cryptoMarket, priority: 4 });
+  }
+
+  // Calculate overhead per section (emoji + title + formatting + newlines)
+  const overhead = sections.length * 25;
+  const textBudget = budget - overhead;
+
+  if (textBudget <= 0) return "";
+
+  const totalRaw = sections.reduce((s, sec) => s + sec.text.length, 0);
+  const result: string[] = [];
+  let used = 0;
+
+  for (const sec of sections.sort((a, b) => a.priority - b.priority)) {
+    const share = Math.max(80, Math.floor((sec.text.length / Math.max(totalRaw, 1)) * textBudget));
+    const remaining = textBudget - used;
+    const max = Math.min(share, remaining);
+    if (max <= 30) break;
+
+    const trimmed = sec.text.length <= max ? sec.text : sec.text.substring(0, max - 3) + "...";
+    result.push(`${sec.emoji} *${sec.title}*\n${esc(trimmed)}`);
+    used += trimmed.length + 25;
+  }
+
+  return result.join("\n\n");
+}
+
+// ── Message splitting ────────────────────────────────────────────────────────
 
 function splitMessages(fullText: string): string[] {
   if (fullText.length <= MAX_MSG_LEN) return [fullText];
 
-  // Split on separator lines or emoji section headers
-  const parts = fullText.split(/(?=─────|[\u{1F4CA}\u{1F4BC}\u{1F4C8}\u{1F3C6}\u{1F4A1}\u{1F1F8}\u{1FA99}\u{1F525}\u{1F4B0}\u{1F4C8}])/u);
+  // Split on double newlines (section breaks)
+  const parts = fullText.split("\n\n");
   const messages: string[] = [];
   let current = "";
 
@@ -160,8 +231,7 @@ function splitMessages(fullText: string): string[] {
       if (current) messages.push(current.trim());
 
       if (part.length > MAX_MSG_LEN) {
-        const truncated = part.substring(0, MAX_MSG_LEN - 20) + "\n\\.\\.\\.continued";
-        messages.push(truncated);
+        messages.push(part.substring(0, MAX_MSG_LEN - 20) + "\n\\.\\.\\.continued");
         current = "";
       } else {
         current = part;
@@ -172,62 +242,57 @@ function splitMessages(fullText: string): string[] {
   }
 
   if (current.trim()) messages.push(current.trim());
-  return messages;
+  return messages.length > 0 ? messages : [fullText.substring(0, MAX_MSG_LEN)];
 }
 
-function formatSGTTime(dateStr: string): string {
-  const now = new Date();
-  const sgtOptions: Intl.DateTimeFormatOptions = {
-    timeZone: "Asia/Singapore",
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  };
-  return now.toLocaleString("en-SG", sgtOptions);
-}
+// ── Main formatter ───────────────────────────────────────────────────────────
 
 export const reportFormatterService = {
   format(data: CollectedData, analysis: AnalysisResult | null): FormattedReport {
     const isWeekly = data.reportType === "weekly";
-    const title = isWeekly ? "📊 Weekly Portfolio Report" : "📊 Daily Portfolio Report";
-    const timeStr = esc(formatSGTTime(data.date));
+    const title = isWeekly ? "📊 *WEEKLY REPORT*" : "📊 *DAILY REPORT*";
+    const timeStr = esc(formatSGTTime());
 
     const sections: string[] = [];
 
     // Header
-    sections.push(`*${title}*\n🕐 ${timeStr} SGT`);
-
-    sections.push(esc(SEPARATOR));
+    sections.push(`${title}\n🕐 ${timeStr} SGT`);
 
     // Portfolio sections
     for (const p of data.portfolios) {
-      sections.push(buildPortfolioSection(p, isWeekly, data.usdToSgd));
+      sections.push(
+        isWeekly
+          ? buildWeeklyPortfolio(p, data.usdToSgd)
+          : buildDailyPortfolio(p, data.usdToSgd),
+      );
     }
 
-    sections.push(esc(SEPARATOR));
-
-    // Top movers from actual holdings data
-    const movers = buildMoversSection(data.portfolios, isWeekly);
-    if (movers) {
-      sections.push(movers);
+    // Asset breakdown (weekly only — saves space on daily)
+    if (isWeekly) {
+      const breakdown = buildAssetBreakdown(data.portfolios);
+      if (breakdown) sections.push(breakdown);
     }
 
-    // AI analysis
-    if (analysis) {
-      sections.push(esc(SEPARATOR));
-      sections.push(buildAISection(analysis, isWeekly));
-    }
+    // Top movers
+    const movers = buildMovers(data.portfolios, isWeekly);
+    if (movers) sections.push(movers);
 
     // Footer
-    const footerParts = [
-      `💱 USD/SGD: \`${esc(data.usdToSgd.toFixed(4))}\``,
-      `USD/HKD: \`${esc(data.usdToHkd.toFixed(4))}\``,
-    ];
-    sections.push(footerParts.join("  •  "));
+    const footer = `💱 \`USD/SGD ${esc(data.usdToSgd.toFixed(4))}\` · \`USD/HKD ${esc(data.usdToHkd.toFixed(4))}\``;
+
+    // Calculate remaining space for AI analysis
+    const dataSections = sections.join("\n\n") + "\n\n" + footer;
+    const dataLen = dataSections.length;
+
+    if (analysis) {
+      const aiBudget = Math.max(0, MAX_MSG_LEN - dataLen - 10);
+      if (aiBudget > 100) {
+        const aiText = buildAI(analysis, aiBudget);
+        if (aiText) sections.push(aiText);
+      }
+    }
+
+    sections.push(footer);
 
     const fullText = sections.join("\n\n");
     return { messages: splitMessages(fullText) };
