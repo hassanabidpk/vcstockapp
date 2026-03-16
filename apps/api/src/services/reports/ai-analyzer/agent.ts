@@ -1,0 +1,124 @@
+import { config } from "../../../config/index.js";
+import { logger } from "../../../utils/logger.js";
+import { getSystemPrompt } from "./prompts.js";
+import { createTools } from "./tools.js";
+import type { CollectedData, AnalysisResult } from "../types.js";
+
+const AGENT_TIMEOUT_MS = 55_000;
+
+function parseAnalysisResult(text: string, reportType: string): AnalysisResult {
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        marketOverview: parsed.marketOverview || "No market overview available.",
+        topMovers: parsed.topMovers || "No top movers data available.",
+        insights: parsed.insights || "No insights available.",
+        sgMarket: reportType === "weekly" ? parsed.sgMarket : undefined,
+        cryptoMarket: reportType === "weekly" ? parsed.cryptoMarket : undefined,
+      };
+    }
+  } catch {
+    logger.warn("Failed to parse agent JSON output, using raw text");
+  }
+
+  return {
+    marketOverview: "Unable to parse structured market overview.",
+    topMovers: "Unable to parse top movers.",
+    insights: text || "No analysis available.",
+  };
+}
+
+export const aiAnalyzerService = {
+  async analyze(data: CollectedData): Promise<AnalysisResult | null> {
+    const startTime = Date.now();
+    logger.info({ reportType: data.reportType }, "AIAnalyzer: starting analysis");
+
+    if (!config.googleCloudProject || !config.googleCredentialsJson) {
+      logger.warn("Google Cloud credentials not configured, skipping AI analysis");
+      return null;
+    }
+
+    try {
+      const { LlmAgent, Runner, InMemorySessionService, GOOGLE_SEARCH } = await import("@google/adk");
+
+      // Decode base64 credentials and set as env var for Google Auth
+      const credentialsJson = Buffer.from(config.googleCredentialsJson, "base64").toString("utf-8");
+      const credentials = JSON.parse(credentialsJson);
+
+      // Set credentials for Google Cloud auth
+      process.env.GOOGLE_CLOUD_PROJECT = config.googleCloudProject;
+      process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
+
+      const tools = createTools(data);
+      const systemPrompt = getSystemPrompt(data.reportType);
+
+      const agent = new LlmAgent({
+        name: "portfolio_analyst",
+        model: `vertexai/gemini-3.1-pro-preview`,
+        instruction: systemPrompt,
+        tools: [...tools, GOOGLE_SEARCH],
+      });
+
+      const sessionService = new InMemorySessionService();
+      const runner = new Runner({
+        appName: "vc-stocks-reports",
+        agent,
+        sessionService,
+      });
+
+      const contextMessage = `Here is the current portfolio data:\n${JSON.stringify(data, null, 2)}\n\nPlease analyze this data and generate a ${data.reportType} report.`;
+
+      const runPromise = (async () => {
+        let lastText = "";
+        const session = await sessionService.createSession({
+          appName: "vc-stocks-reports",
+          userId: "report-system",
+        });
+
+        const events = runner.runAsync({
+          userId: "report-system",
+          sessionId: session.id,
+          newMessage: {
+            role: "user",
+            parts: [{ text: contextMessage }],
+          },
+        });
+
+        for await (const event of events) {
+          if (event.content?.parts) {
+            for (const part of event.content.parts) {
+              if ("text" in part && part.text) {
+                lastText = part.text;
+              }
+            }
+          }
+        }
+
+        return lastText;
+      })();
+
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => {
+          logger.warn({ timeoutMs: AGENT_TIMEOUT_MS }, "AIAnalyzer: agent timed out");
+          resolve(null);
+        }, AGENT_TIMEOUT_MS)
+      );
+
+      const result = await Promise.race([runPromise, timeoutPromise]);
+
+      if (!result) {
+        return null;
+      }
+
+      const duration = Date.now() - startTime;
+      logger.info({ reportType: data.reportType, duration }, "AIAnalyzer: done");
+
+      return parseAnalysisResult(result, data.reportType);
+    } catch (err) {
+      logger.error({ err }, "AIAnalyzer: failed");
+      return null;
+    }
+  },
+};

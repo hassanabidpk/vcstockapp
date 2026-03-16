@@ -5,6 +5,8 @@ import { holdingsRouter } from "./holdings.routes.js";
 import { stocksRouter } from "./stocks.routes.js";
 import { cryptoRouter } from "./crypto.routes.js";
 import { snapshotsRouter } from "./snapshots.routes.js";
+import { reportsRouter } from "./reports.routes.js";
+import { telegramRouter } from "./telegram.routes.js";
 import { requireAuth } from "../../middleware/auth.js";
 
 const router = Router();
@@ -14,6 +16,8 @@ router.use("/", authRouter);
 
 // Cron routes (protected by CRON_SECRET, not user auth)
 router.use("/snapshots", snapshotsRouter);
+router.use("/reports", reportsRouter);
+router.use("/telegram", telegramRouter);
 
 // Protected routes
 router.use("/portfolios", requireAuth, portfoliosRouter);

@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/snapshots",
       "schedule": "0 21 * * 1-5"
+    },
+    {
+      "path": "/api/cron/reports/daily",
+      "schedule": "30 21 * * 1-5"
+    },
+    {
+      "path": "/api/cron/reports/weekly",
+      "schedule": "0 10 * * 6"
     }
   ]
 }
