@@ -94,16 +94,21 @@ export const aiAnalyzerService = {
           },
         });
 
+        let eventCount = 0;
         for await (const event of events) {
+          eventCount++;
+          logger.debug({ eventCount, author: event.author, hasParts: !!event.content?.parts }, "AIAnalyzer: event received");
           if (event.content?.parts) {
             for (const part of event.content.parts) {
               if ("text" in part && part.text) {
                 lastText = part.text;
+                logger.debug({ textLength: part.text.length }, "AIAnalyzer: got text part");
               }
             }
           }
         }
 
+        logger.info({ eventCount, hasText: !!lastText, textLength: lastText.length }, "AIAnalyzer: agent run complete");
         return lastText;
       })();
 
@@ -117,6 +122,7 @@ export const aiAnalyzerService = {
       const result = await Promise.race([runPromise, timeoutPromise]);
 
       if (!result) {
+        logger.warn("AIAnalyzer: no text returned from agent");
         return null;
       }
 
