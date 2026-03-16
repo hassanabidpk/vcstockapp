@@ -95,7 +95,7 @@ export const aiAnalyzerService = {
         let eventCount = 0;
         for await (const event of events) {
           eventCount++;
-          const evt = event as Record<string, unknown>;
+          const evt = event as unknown as Record<string, unknown>;
           if (evt.errorCode || evt.errorMessage) {
             logger.error({ errorCode: evt.errorCode, errorMessage: evt.errorMessage }, "AIAnalyzer: agent event error");
           }
