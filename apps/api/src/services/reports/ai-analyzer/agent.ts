@@ -3,7 +3,7 @@ import { logger } from "../../../utils/logger.js";
 import { getSystemPrompt } from "./prompts.js";
 import type { CollectedData, AnalysisResult } from "../types.js";
 
-const AGENT_TIMEOUT_MS = 55_000;
+const AGENT_TIMEOUT_MS = 120_000;
 
 function parseAnalysisResult(text: string, reportType: string): AnalysisResult {
   try {
@@ -62,7 +62,7 @@ export const aiAnalyzerService = {
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",
-        model: "gemini-3.1-pro-preview",
+        model: config.geminiModel,
         instruction: systemPrompt,
         tools: [GOOGLE_SEARCH],
       });
