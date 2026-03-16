@@ -15,20 +15,18 @@ export const telegramController = {
       return res.status(401).json({ error: { code: "UNAUTHORIZED", message: "Invalid webhook secret" } });
     }
 
-    // Respond immediately
-    res.status(200).json({ ok: true });
-
-    // Process asynchronously
     try {
       const update = req.body;
       const message = update?.message;
-      if (!message?.text || !message?.chat?.id) return;
+      if (!message?.text || !message?.chat?.id) {
+        return res.status(200).json({ ok: true });
+      }
 
       const chatId = String(message.chat.id);
 
       if (!telegramService.isAllowedChat(chatId)) {
         logger.warn({ chatId }, "Telegram message from unauthorized chat");
-        return;
+        return res.status(200).json({ ok: true });
       }
 
       const command = message.text.trim().toLowerCase();
@@ -36,19 +34,23 @@ export const telegramController = {
 
       if (command === "/daily") reportType = "daily";
       else if (command === "/weekly") reportType = "weekly";
-      else return;
+      else return res.status(200).json({ ok: true });
 
       const lastTime = lastRequestTime.get(chatId) || 0;
       if (Date.now() - lastTime < RATE_LIMIT_MS) {
         logger.info({ chatId, command }, "Rate limited Telegram command");
-        return;
+        return res.status(200).json({ ok: true });
       }
       lastRequestTime.set(chatId, Date.now());
 
       logger.info({ chatId, command: reportType }, "Processing Telegram report command");
       await reportService.generate(reportType);
+
+      logger.info({ chatId, command: reportType }, "Telegram report command completed");
+      return res.status(200).json({ ok: true });
     } catch (err) {
       logger.error({ err }, "Error processing Telegram webhook");
+      return res.status(200).json({ ok: true });
     }
   },
 };
