@@ -40,7 +40,7 @@ export default function DashboardPage() {
     );
   }
 
-  const assetTypes = ["us_stock", "sg_stock", "crypto"] as const;
+  const assetTypes = ["us_stock", "sg_stock", "hk_stock", "crypto"] as const;
 
   return (
     <div className="p-4">

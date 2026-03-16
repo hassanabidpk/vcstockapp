@@ -11,12 +11,14 @@ export const dataCollectorService = {
     const portfolios: CollectedPortfolio[] = [];
     const history: Record<string, SnapshotEntry[]> = {};
     let usdToSgd = 1.34;
+    let usdToHkd = 7.78;
 
     for (const portfolio of allPortfolios) {
       const detail = await portfolioService.getById(portfolio.id);
       if (!detail) continue;
 
       usdToSgd = detail.usdToSgd || usdToSgd;
+      usdToHkd = detail.usdToHkd || usdToHkd;
 
       const holdings = detail.holdings.map((h: any) => ({
         symbol: h.symbol,
@@ -108,6 +110,7 @@ export const dataCollectorService = {
       reportType,
       date: new Date().toISOString().split("T")[0],
       usdToSgd,
+      usdToHkd,
       portfolios,
       combinedTotals,
       history,

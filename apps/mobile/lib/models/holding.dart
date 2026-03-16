@@ -8,6 +8,8 @@ enum AssetType {
   usStock,
   @JsonValue('sg_stock')
   sgStock,
+  @JsonValue('hk_stock')
+  hkStock,
   @JsonValue('crypto')
   crypto,
 }

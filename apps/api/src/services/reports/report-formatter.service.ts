@@ -223,7 +223,10 @@ export const reportFormatterService = {
     }
 
     // Footer
-    const footerParts = [`💱 USD/SGD: \`${esc(data.usdToSgd.toFixed(4))}\``];
+    const footerParts = [
+      `💱 USD/SGD: \`${esc(data.usdToSgd.toFixed(4))}\``,
+      `USD/HKD: \`${esc(data.usdToHkd.toFixed(4))}\``,
+    ];
     sections.push(footerParts.join("  •  "));
 
     const fullText = sections.join("\n\n");

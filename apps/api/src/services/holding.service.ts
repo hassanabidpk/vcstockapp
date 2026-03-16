@@ -27,7 +27,7 @@ export const holdingService = {
         assetType: data.assetType,
         shares: data.shares,
         avgBuyPrice: data.avgBuyPrice,
-        currency: data.currency || (data.assetType === "sg_stock" ? "SGD" : "USD"),
+        currency: data.currency || (data.assetType === "sg_stock" ? "SGD" : data.assetType === "hk_stock" ? "HKD" : "USD"),
         platform: data.platform || "",
       });
     } catch (err: unknown) {

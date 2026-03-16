@@ -67,6 +67,8 @@ class _AddHoldingSheetState extends ConsumerState<AddHoldingSheet> {
         return 'e.g. AAPL';
       case AssetType.sgStock:
         return 'e.g. D05.SI';
+      case AssetType.hkStock:
+        return 'e.g. 9988.HK';
       case AssetType.crypto:
         return 'e.g. bitcoin';
     }
@@ -92,7 +94,11 @@ class _AddHoldingSheetState extends ConsumerState<AddHoldingSheet> {
       final platform = _platform == 'Other'
           ? _customPlatformController.text.trim()
           : _platform;
-      final currency = _assetType == AssetType.sgStock ? 'SGD' : 'USD';
+      final currency = _assetType == AssetType.sgStock
+          ? 'SGD'
+          : _assetType == AssetType.hkStock
+              ? 'HKD'
+              : 'USD';
 
       final input = CreateHoldingInput(
         symbol: symbol.toUpperCase(),
@@ -215,11 +221,15 @@ class _AddHoldingSheetState extends ConsumerState<AddHoldingSheet> {
                             segments: const [
                               ButtonSegment(
                                 value: AssetType.usStock,
-                                label: Text('US Stock'),
+                                label: Text('US'),
                               ),
                               ButtonSegment(
                                 value: AssetType.sgStock,
-                                label: Text('SG Stock'),
+                                label: Text('SG'),
+                              ),
+                              ButtonSegment(
+                                value: AssetType.hkStock,
+                                label: Text('HK'),
                               ),
                               ButtonSegment(
                                 value: AssetType.crypto,

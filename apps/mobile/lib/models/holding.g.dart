@@ -55,6 +55,7 @@ Map<String, dynamic> _$$HoldingWithPriceImplToJson(
 const _$AssetTypeEnumMap = {
   AssetType.usStock: 'us_stock',
   AssetType.sgStock: 'sg_stock',
+  AssetType.hkStock: 'hk_stock',
   AssetType.crypto: 'crypto',
 };
 

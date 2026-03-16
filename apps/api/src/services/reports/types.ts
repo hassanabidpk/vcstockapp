@@ -3,7 +3,7 @@ export type ReportType = "daily" | "weekly";
 export interface CollectedHolding {
   symbol: string;
   name: string;
-  assetType: "us_stock" | "sg_stock" | "crypto";
+  assetType: "us_stock" | "sg_stock" | "hk_stock" | "crypto";
   shares: number;
   avgBuyPrice: number;
   currentPrice: number;
@@ -53,6 +53,7 @@ export interface CollectedData {
   reportType: ReportType;
   date: string;
   usdToSgd: number;
+  usdToHkd: number;
   portfolios: CollectedPortfolio[];
   combinedTotals: CombinedTotals;
   history: Record<string, SnapshotEntry[]>;

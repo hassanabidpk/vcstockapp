@@ -11,6 +11,27 @@ function isSGStock(symbol: string): boolean {
   return symbol.includes(".SI");
 }
 
+function isHKStock(symbol: string): boolean {
+  return symbol.includes(".HK");
+}
+
+/** SG/HK stocks have no free quote API but FMP profile works */
+function isRegionalStock(symbol: string): boolean {
+  return isSGStock(symbol) || isHKStock(symbol);
+}
+
+function getAssetTypeForSymbol(symbol: string): string {
+  if (isSGStock(symbol)) return "sg_stock";
+  if (isHKStock(symbol)) return "hk_stock";
+  return "us_stock";
+}
+
+function getCurrencyForSymbol(symbol: string): string {
+  if (isSGStock(symbol)) return "SGD";
+  if (isHKStock(symbol)) return "HKD";
+  return "USD";
+}
+
 function rangeToOutputSize(range: string): number {
   switch (range) {
     case "1W": return 7;
@@ -97,6 +118,8 @@ interface FMPProfile {
   symbol: string;
   companyName: string;
   price: number;
+  change: number;
+  changePercentage: number;
   marketCap: number;
   industry: string;
   sector: string;
@@ -122,6 +145,30 @@ interface QuoteResult {
 }
 
 export const stockPriceService = {
+  /** Fetch price from FMP /profile endpoint (works for SG/HK stocks on free tier) */
+  async _fetchPriceFromFMPProfile(symbol: string): Promise<QuoteResult | null> {
+    try {
+      const profiles = await fmpFetch<FMPProfile[]>(`/profile?symbol=${symbol}`);
+      if (!profiles || profiles.length === 0) return null;
+      const p = profiles[0];
+      return {
+        symbol: p.symbol,
+        name: p.companyName,
+        price: p.price,
+        change: p.change || 0,
+        changePercent: p.changePercentage || 0,
+        dayHigh: 0,
+        dayLow: 0,
+        volume: 0,
+        marketCap: p.marketCap || 0,
+        exchange: p.exchange,
+      };
+    } catch (err) {
+      logger.warn({ err, symbol }, "Failed to fetch price from FMP profile");
+      return null;
+    }
+  },
+
   /** Fetch a single quote from FMP */
   async _fetchQuoteFromFMP(symbol: string): Promise<QuoteResult | null> {
     try {
@@ -169,9 +216,12 @@ export const stockPriceService = {
     // 2. Fetch from provider
     let quoteData: QuoteResult | null = null;
 
-    if (isSGStock(symbol)) {
-      // SG stocks: manual price only (FMP free tier doesn't support SGX)
-      logger.debug({ symbol }, "SG stock — skipping API fetch, use manual price");
+    if (isRegionalStock(symbol)) {
+      // SG/HK stocks: use FMP profile endpoint for price data
+      quoteData = await this._fetchPriceFromFMPProfile(symbol);
+      if (!quoteData) {
+        logger.debug({ symbol }, "SG/HK stock — FMP profile failed, will fall back to manual price");
+      }
     } else if (hasTwelveData) {
       // US stocks: Twelve Data primary, FMP fallback
       try {
@@ -202,17 +252,16 @@ export const stockPriceService = {
     }
 
     // 3. Cache the result
-    const sgStock = isSGStock(symbol);
     await cacheService.setCachedPrice({
       symbol: quoteData.symbol,
-      assetType: sgStock ? "sg_stock" : "us_stock",
+      assetType: getAssetTypeForSymbol(symbol),
       currentPrice: quoteData.price,
       change: quoteData.change,
       changePercent: quoteData.changePercent,
       pe: null,
       eps: null,
       marketCap: quoteData.marketCap,
-      currency: sgStock ? "SGD" : "USD",
+      currency: getCurrencyForSymbol(symbol),
     });
 
     return {
@@ -267,12 +316,40 @@ export const stockPriceService = {
     }
 
     if (missing.length > 0) {
-      const missingSG = missing.filter((s) => isSGStock(s));
-      const missingUS = missing.filter((s) => !isSGStock(s));
+      const missingRegional = missing.filter((s) => isRegionalStock(s));
+      const missingUS = missing.filter((s) => !isRegionalStock(s));
 
-      // SG stocks: manual price only (FMP free tier doesn't support SGX)
-      if (missingSG.length > 0) {
-        logger.debug({ symbols: missingSG }, "SG stocks — skipping API fetch, use manual prices");
+      // SG/HK stocks: fetch from FMP profile endpoint
+      for (const sym of missingRegional) {
+        const profileData = await this._fetchPriceFromFMPProfile(sym);
+        if (profileData) {
+          await cacheService.setCachedPrice({
+            symbol: profileData.symbol,
+            assetType: getAssetTypeForSymbol(sym),
+            currentPrice: profileData.price,
+            change: profileData.change,
+            changePercent: profileData.changePercent,
+            pe: null,
+            eps: null,
+            marketCap: profileData.marketCap,
+            currency: getCurrencyForSymbol(sym),
+          });
+          results.push({
+            symbol: profileData.symbol,
+            name: profileData.name,
+            price: profileData.price,
+            change: profileData.change,
+            changePercent: profileData.changePercent,
+            pe: null,
+            eps: null,
+            marketCap: profileData.marketCap,
+            priceUpdatedAt: new Date().toISOString(),
+          });
+        }
+        // Small delay between profile calls to avoid rate limiting
+        if (missingRegional.indexOf(sym) < missingRegional.length - 1) {
+          await new Promise((r) => setTimeout(r, 300));
+        }
       }
 
       // US stocks: Twelve Data batch primary, FMP individual fallback
@@ -390,8 +467,8 @@ export const stockPriceService = {
       }));
     }
 
-    // Try Twelve Data for US stocks
-    if (!isSGStock(symbol) && hasTwelveData) {
+    // Try Twelve Data for US stocks (not SG/HK regional stocks)
+    if (!isRegionalStock(symbol) && hasTwelveData) {
       try {
         const outputsize = rangeToOutputSize(range);
         const tdHistory = await twelveDataService.getHistory(symbol, outputsize);

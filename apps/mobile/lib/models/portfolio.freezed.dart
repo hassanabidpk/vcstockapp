@@ -179,6 +179,7 @@ mixin _$Portfolio {
   List<HoldingWithPrice> get holdings => throw _privateConstructorUsedError;
   PortfolioSummary get summary => throw _privateConstructorUsedError;
   double? get usdToSgd => throw _privateConstructorUsedError;
+  double? get usdToHkd => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -196,7 +197,8 @@ abstract class $PortfolioCopyWith<$Res> {
       String name,
       List<HoldingWithPrice> holdings,
       PortfolioSummary summary,
-      double? usdToSgd});
+      double? usdToSgd,
+      double? usdToHkd});
 
   $PortfolioSummaryCopyWith<$Res> get summary;
 }
@@ -219,6 +221,7 @@ class _$PortfolioCopyWithImpl<$Res, $Val extends Portfolio>
     Object? holdings = null,
     Object? summary = null,
     Object? usdToSgd = freezed,
+    Object? usdToHkd = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -240,6 +243,10 @@ class _$PortfolioCopyWithImpl<$Res, $Val extends Portfolio>
       usdToSgd: freezed == usdToSgd
           ? _value.usdToSgd
           : usdToSgd // ignore: cast_nullable_to_non_nullable
+              as double?,
+      usdToHkd: freezed == usdToHkd
+          ? _value.usdToHkd
+          : usdToHkd // ignore: cast_nullable_to_non_nullable
               as double?,
     ) as $Val);
   }
@@ -266,7 +273,8 @@ abstract class _$$PortfolioImplCopyWith<$Res>
       String name,
       List<HoldingWithPrice> holdings,
       PortfolioSummary summary,
-      double? usdToSgd});
+      double? usdToSgd,
+      double? usdToHkd});
 
   @override
   $PortfolioSummaryCopyWith<$Res> get summary;
@@ -288,6 +296,7 @@ class __$$PortfolioImplCopyWithImpl<$Res>
     Object? holdings = null,
     Object? summary = null,
     Object? usdToSgd = freezed,
+    Object? usdToHkd = freezed,
   }) {
     return _then(_$PortfolioImpl(
       id: null == id
@@ -310,6 +319,10 @@ class __$$PortfolioImplCopyWithImpl<$Res>
           ? _value.usdToSgd
           : usdToSgd // ignore: cast_nullable_to_non_nullable
               as double?,
+      usdToHkd: freezed == usdToHkd
+          ? _value.usdToHkd
+          : usdToHkd // ignore: cast_nullable_to_non_nullable
+              as double?,
     ));
   }
 }
@@ -322,7 +335,8 @@ class _$PortfolioImpl implements _Portfolio {
       required this.name,
       required final List<HoldingWithPrice> holdings,
       required this.summary,
-      this.usdToSgd})
+      this.usdToSgd,
+      this.usdToHkd})
       : _holdings = holdings;
 
   factory _$PortfolioImpl.fromJson(Map<String, dynamic> json) =>
@@ -344,10 +358,12 @@ class _$PortfolioImpl implements _Portfolio {
   final PortfolioSummary summary;
   @override
   final double? usdToSgd;
+  @override
+  final double? usdToHkd;
 
   @override
   String toString() {
-    return 'Portfolio(id: $id, name: $name, holdings: $holdings, summary: $summary, usdToSgd: $usdToSgd)';
+    return 'Portfolio(id: $id, name: $name, holdings: $holdings, summary: $summary, usdToSgd: $usdToSgd, usdToHkd: $usdToHkd)';
   }
 
   @override
@@ -360,13 +376,21 @@ class _$PortfolioImpl implements _Portfolio {
             const DeepCollectionEquality().equals(other._holdings, _holdings) &&
             (identical(other.summary, summary) || other.summary == summary) &&
             (identical(other.usdToSgd, usdToSgd) ||
-                other.usdToSgd == usdToSgd));
+                other.usdToSgd == usdToSgd) &&
+            (identical(other.usdToHkd, usdToHkd) ||
+                other.usdToHkd == usdToHkd));
   }
 
   @JsonKey(ignore: true)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name,
-      const DeepCollectionEquality().hash(_holdings), summary, usdToSgd);
+  int get hashCode => Object.hash(
+      runtimeType,
+      id,
+      name,
+      const DeepCollectionEquality().hash(_holdings),
+      summary,
+      usdToSgd,
+      usdToHkd);
 
   @JsonKey(ignore: true)
   @override
@@ -388,7 +412,8 @@ abstract class _Portfolio implements Portfolio {
       required final String name,
       required final List<HoldingWithPrice> holdings,
       required final PortfolioSummary summary,
-      final double? usdToSgd}) = _$PortfolioImpl;
+      final double? usdToSgd,
+      final double? usdToHkd}) = _$PortfolioImpl;
 
   factory _Portfolio.fromJson(Map<String, dynamic> json) =
       _$PortfolioImpl.fromJson;
@@ -403,6 +428,8 @@ abstract class _Portfolio implements Portfolio {
   PortfolioSummary get summary;
   @override
   double? get usdToSgd;
+  @override
+  double? get usdToHkd;
   @override
   @JsonKey(ignore: true)
   _$$PortfolioImplCopyWith<_$PortfolioImpl> get copyWith =>

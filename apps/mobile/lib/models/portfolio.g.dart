@@ -28,6 +28,7 @@ _$PortfolioImpl _$$PortfolioImplFromJson(Map<String, dynamic> json) =>
       summary:
           PortfolioSummary.fromJson(json['summary'] as Map<String, dynamic>),
       usdToSgd: (json['usdToSgd'] as num?)?.toDouble(),
+      usdToHkd: (json['usdToHkd'] as num?)?.toDouble(),
     );
 
 Map<String, dynamic> _$$PortfolioImplToJson(_$PortfolioImpl instance) =>
@@ -37,6 +38,7 @@ Map<String, dynamic> _$$PortfolioImplToJson(_$PortfolioImpl instance) =>
       'holdings': instance.holdings,
       'summary': instance.summary,
       'usdToSgd': instance.usdToSgd,
+      'usdToHkd': instance.usdToHkd,
     };
 
 _$PortfolioSummaryImpl _$$PortfolioSummaryImplFromJson(

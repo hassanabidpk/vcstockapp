@@ -23,6 +23,7 @@ class Portfolio with _$Portfolio {
     required List<HoldingWithPrice> holdings,
     required PortfolioSummary summary,
     double? usdToSgd,
+    double? usdToHkd,
   }) = _Portfolio;
 
   factory Portfolio.fromJson(Map<String, dynamic> json) =>

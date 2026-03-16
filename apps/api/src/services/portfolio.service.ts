@@ -5,7 +5,6 @@ import { exchangeRateService } from "./exchange-rate.service.js";
 import { calcProfitLoss, aggregatePortfolio } from "@vc/utils";
 import type { HoldingWithPrice } from "@vc/types";
 import { ApiError } from "../utils/api-error.js";
-import { config } from "../config/index.js";
 
 export const portfolioService = {
   async listAll() {
@@ -18,7 +17,7 @@ export const portfolioService = {
 
     // Separate stock and crypto holdings
     const stockSymbols = portfolio.holdings
-      .filter((h) => h.assetType === "us_stock" || h.assetType === "sg_stock")
+      .filter((h) => h.assetType === "us_stock" || h.assetType === "sg_stock" || h.assetType === "hk_stock")
       .map((h) => h.symbol);
 
     // For crypto, derive CoinGecko ID from the holding name (e.g. "Bitcoin" -> "bitcoin")
@@ -29,12 +28,13 @@ export const portfolioService = {
     }
     const cryptoIds = [...new Set(cryptoSymbolToId.values())];
 
-    // Fetch prices and exchange rate in parallel
-    const [stockQuotes, cryptoPrices, usdToSgd] = await Promise.all([
+    // Fetch prices and exchange rates in parallel
+    const [stockQuotes, cryptoPrices, fxRates] = await Promise.all([
       stockSymbols.length > 0 ? stockPriceService.getBatchQuotes(stockSymbols) : [],
       cryptoIds.length > 0 ? cryptoPriceService.getPrices(cryptoIds) : [],
-      exchangeRateService.getUsdToSgd(),
+      exchangeRateService.getRates(),
     ]);
+    const { usdToSgd, usdToHkd } = fxRates;
 
     // Build price map
     const priceMap = new Map<string, { price: number; change: number; changePercent: number; name: string; priceUpdatedAt: string | null }>();
@@ -58,21 +58,17 @@ export const portfolioService = {
     }
 
     // Enrich holdings with prices
-    // For US stocks with Twelve Data available: prefer live API price over manual price
-    // For SG stocks: always use manual price (no free API available)
-    const hasTwelveData = !!config.twelveDataApiKey;
+    // If we have a live API price (from Twelve Data, FMP profile, or CoinGecko), prefer it over manual price
+    // Manual price is used as fallback when no API price is available
 
     const holdings = portfolio.holdings.map((h) => {
       // For crypto, look up by CoinGecko ID derived from name; for stocks, use symbol
       const lookupKey = h.assetType === "crypto" ? cryptoSymbolToId.get(h.symbol) || h.symbol : h.symbol;
       const priceData = priceMap.get(lookupKey);
 
-      // US stocks with live Twelve Data prices → ignore manual price, use API
-      // SG stocks → always use manual price (no API source)
-      // Crypto → use API price, manual as fallback
+      // If API returned a valid price, prefer it; otherwise fall back to manual price
       const hasLivePrice = priceData && priceData.price > 0;
-      const canUseLiveForUS = h.assetType === "us_stock" && hasTwelveData && hasLivePrice;
-      const useManual = h.manualPrice != null && !canUseLiveForUS;
+      const useManual = h.manualPrice != null && !hasLivePrice;
 
       const currentPrice = useManual ? (h.manualPrice ?? 0) : (priceData?.price || 0);
       const { costBasis, marketValue, profitLoss, profitLossPercent } = calcProfitLoss(
@@ -86,7 +82,7 @@ export const portfolioService = {
         portfolioId: h.portfolioId,
         symbol: h.symbol,
         name: h.name || priceData?.name || h.symbol,
-        assetType: h.assetType as "us_stock" | "sg_stock" | "crypto",
+        assetType: h.assetType as "us_stock" | "sg_stock" | "hk_stock" | "crypto",
         shares: h.shares,
         avgBuyPrice: h.avgBuyPrice,
         manualPrice: useManual ? h.manualPrice : null,
@@ -103,19 +99,30 @@ export const portfolioService = {
       };
     });
 
-    // Normalize SGD holdings to USD for aggregation so totals are in a single currency
+    // Normalize non-USD holdings to USD for aggregation so totals are in a single currency
     const sgdToUsd = usdToSgd > 0 ? 1 / usdToSgd : 1;
-    const normalizedHoldings = holdings.map((h) =>
-      h.currency === "SGD"
-        ? {
-            ...h,
-            marketValue: h.marketValue * sgdToUsd,
-            costBasis: h.costBasis * sgdToUsd,
-            profitLoss: h.profitLoss * sgdToUsd,
-            change: h.change * sgdToUsd,
-          }
-        : h,
-    );
+    const hkdToUsd = usdToHkd > 0 ? 1 / usdToHkd : 1;
+    const normalizedHoldings = holdings.map((h) => {
+      if (h.currency === "SGD") {
+        return {
+          ...h,
+          marketValue: h.marketValue * sgdToUsd,
+          costBasis: h.costBasis * sgdToUsd,
+          profitLoss: h.profitLoss * sgdToUsd,
+          change: h.change * sgdToUsd,
+        };
+      }
+      if (h.currency === "HKD") {
+        return {
+          ...h,
+          marketValue: h.marketValue * hkdToUsd,
+          costBasis: h.costBasis * hkdToUsd,
+          profitLoss: h.profitLoss * hkdToUsd,
+          change: h.change * hkdToUsd,
+        };
+      }
+      return h;
+    });
 
     const summary = aggregatePortfolio(normalizedHoldings);
 
@@ -125,6 +132,7 @@ export const portfolioService = {
       holdings,
       summary,
       usdToSgd,
+      usdToHkd,
     };
   },
 

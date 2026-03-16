@@ -6,7 +6,7 @@ part of 'chat_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatNotifierHash() => r'd60ef85d080269bb28d3b4eac75e576598260325';
+String _$chatNotifierHash() => r'5611e31cc9999c12c4b1dc2b750f6aa5c1d28d0c';
 
 /// Notifier that owns the chat message list and talks to Gemini via
 /// the Firebase AI Logic SDK.

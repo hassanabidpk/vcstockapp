@@ -3,6 +3,7 @@ const Duration kRefreshInterval = Duration(seconds: 60);
 const Map<String, String> kAssetTypeLabels = {
   'us_stock': 'US Stocks',
   'sg_stock': 'SG Stocks',
+  'hk_stock': 'HK Stocks',
   'crypto': 'Crypto',
 };
 

@@ -1,4 +1,4 @@
-export type AssetType = "us_stock" | "sg_stock" | "crypto";
+export type AssetType = "us_stock" | "sg_stock" | "hk_stock" | "crypto";
 
 export interface Holding {
   id: string;

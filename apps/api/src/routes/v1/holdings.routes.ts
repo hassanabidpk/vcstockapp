@@ -9,10 +9,10 @@ const createSchema = {
   body: z.object({
     symbol: z.string().min(1).max(20),
     name: z.string().min(1).max(200),
-    assetType: z.enum(["us_stock", "sg_stock", "crypto"]),
+    assetType: z.enum(["us_stock", "sg_stock", "hk_stock", "crypto"]),
     shares: z.number().min(0),
     avgBuyPrice: z.number().min(0),
-    currency: z.enum(["USD", "SGD"]).optional(),
+    currency: z.enum(["USD", "SGD", "HKD"]).optional(),
     platform: z.string().max(50).optional(),
   }),
 };

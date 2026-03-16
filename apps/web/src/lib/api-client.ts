@@ -74,6 +74,7 @@ export interface PortfolioData {
   name: string;
   holdings: HoldingData[];
   usdToSgd?: number;
+  usdToHkd?: number;
   summary: {
     totalValue: number;
     totalCost: number;
@@ -99,7 +100,7 @@ export interface HoldingData {
   portfolioId: string;
   symbol: string;
   name: string;
-  assetType: "us_stock" | "sg_stock" | "crypto";
+  assetType: "us_stock" | "sg_stock" | "hk_stock" | "crypto";
   shares: number;
   avgBuyPrice: number;
   manualPrice: number | null;
@@ -118,7 +119,7 @@ export interface HoldingData {
 export interface CreateHoldingPayload {
   symbol: string;
   name: string;
-  assetType: "us_stock" | "sg_stock" | "crypto";
+  assetType: "us_stock" | "sg_stock" | "hk_stock" | "crypto";
   shares: number;
   avgBuyPrice: number;
   currency?: string;

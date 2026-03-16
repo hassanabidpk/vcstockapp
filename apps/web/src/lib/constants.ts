@@ -3,6 +3,7 @@ export const REFRESH_INTERVAL = 60_000; // 60 seconds
 export const ASSET_TYPE_LABELS: Record<string, string> = {
   us_stock: "US Stocks",
   sg_stock: "SG Stocks",
+  hk_stock: "HK Stocks",
   crypto: "Crypto",
 };
 

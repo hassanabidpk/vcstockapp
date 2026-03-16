@@ -20,7 +20,7 @@ export function AddHoldingModal({
 }) {
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
-  const [assetType, setAssetType] = useState<"us_stock" | "sg_stock" | "crypto">("us_stock");
+  const [assetType, setAssetType] = useState<"us_stock" | "sg_stock" | "hk_stock" | "crypto">("us_stock");
   const [shares, setShares] = useState("");
   const [avgBuyPrice, setAvgBuyPrice] = useState("");
   const [platform, setPlatform] = useState("");
@@ -42,7 +42,7 @@ export function AddHoldingModal({
         assetType,
         shares: parseFloat(shares) || 0,
         avgBuyPrice: parseFloat(avgBuyPrice) || 0,
-        currency: assetType === "sg_stock" ? "SGD" : "USD",
+        currency: assetType === "sg_stock" ? "SGD" : assetType === "hk_stock" ? "HKD" : "USD",
         platform: effectivePlatform,
       });
       onAdded();
@@ -64,7 +64,7 @@ export function AddHoldingModal({
     <Modal isOpen={isOpen} onClose={onClose} title="Add Holding">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="flex gap-2">
-          {(["us_stock", "sg_stock", "crypto"] as const).map((type) => (
+          {(["us_stock", "sg_stock", "hk_stock", "crypto"] as const).map((type) => (
             <button
               key={type}
               type="button"
@@ -75,14 +75,14 @@ export function AddHoldingModal({
                   : "dark:bg-slate-800 bg-slate-100 dark:text-slate-400 text-slate-600"
               }`}
             >
-              {type === "us_stock" ? "US Stock" : type === "sg_stock" ? "SG Stock" : "Crypto"}
+              {type === "us_stock" ? "US Stock" : type === "sg_stock" ? "SG Stock" : type === "hk_stock" ? "HK Stock" : "Crypto"}
             </button>
           ))}
         </div>
 
         <Input
           label="Symbol"
-          placeholder={assetType === "crypto" ? "bitcoin" : "NVDA"}
+          placeholder={assetType === "crypto" ? "bitcoin" : assetType === "hk_stock" ? "9988.HK" : assetType === "sg_stock" ? "D05.SI" : "NVDA"}
           value={symbol}
           onChange={(e) => setSymbol(e.target.value)}
           required
