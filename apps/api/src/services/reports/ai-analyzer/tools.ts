@@ -1,7 +1,8 @@
-import { FunctionTool } from "@google/adk";
 import type { CollectedData } from "../types.js";
 
-export function createTools(data: CollectedData) {
+export async function createTools(data: CollectedData) {
+  const { FunctionTool } = await import("@google/adk");
+
   const getPortfolioSummary = new FunctionTool({
     name: "get_portfolio_summary",
     description:

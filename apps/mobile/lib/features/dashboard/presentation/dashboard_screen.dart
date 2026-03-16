@@ -81,6 +81,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ref.invalidate(portfolioHistoryProvider);
         },
         child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
           children: [
             // Portfolio selector
             portfolioListAsync.when(

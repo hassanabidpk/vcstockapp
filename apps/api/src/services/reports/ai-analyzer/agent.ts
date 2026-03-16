@@ -58,7 +58,7 @@ export const aiAnalyzerService = {
       process.env.GOOGLE_CLOUD_PROJECT = config.googleCloudProject;
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
 
-      const tools = createTools(data);
+      const tools = await createTools(data);
       const systemPrompt = getSystemPrompt(data.reportType);
 
       const agent = new LlmAgent({

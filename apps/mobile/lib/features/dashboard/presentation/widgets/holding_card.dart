@@ -36,12 +36,12 @@ class HoldingSymbolCell extends StatelessWidget {
       children: [
         Text(
           firstName(holding.name),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           overflow: TextOverflow.ellipsis,
         ),
         Text(
           holding.symbol,
-          style: TextStyle(fontSize: 11, color: mutedColor),
+          style: TextStyle(fontSize: 13, color: mutedColor),
         ),
         if (holding.platform.isNotEmpty)
           Container(
@@ -56,7 +56,7 @@ class HoldingSymbolCell extends StatelessWidget {
             child: Text(
               holding.platform,
               style: TextStyle(
-                fontSize: 9,
+                fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: mutedColor,
               ),
@@ -90,11 +90,11 @@ class HoldingDataCells extends StatelessWidget {
     final mutedColor =
         isDark ? AppColors.darkTextSecondary : Colors.grey.shade600;
     const numStyle = TextStyle(
-      fontSize: 13,
+      fontSize: 15,
       fontFeatures: [FontFeature.tabularFigures()],
     );
     final subStyle = TextStyle(
-      fontSize: 11,
+      fontSize: 13,
       color: mutedColor,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
@@ -124,13 +124,13 @@ class HoldingDataCells extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(formatNumber(h.currentPrice), style: numStyle),
+              Text(formatNumber(h.currentPrice), style: numStyle.copyWith(fontWeight: FontWeight.w500)),
               Text(formatNumber(h.avgBuyPrice), style: subStyle),
               if (h.priceUpdatedAt != null && h.priceUpdatedAt!.isNotEmpty)
                 Text(
                   timeAgo(h.priceUpdatedAt),
                   style: TextStyle(
-                    fontSize: 9,
+                    fontSize: 11,
                     color: mutedColor.withValues(alpha: 0.7),
                   ),
                 ),
@@ -147,7 +147,7 @@ class HoldingDataCells extends StatelessWidget {
             children: [
               Text(
                 '${plSign(todayPL)}${formatNumber(todayPL.abs())}',
-                style: numStyle.copyWith(color: plColor(todayPL)),
+                style: numStyle.copyWith(fontWeight: FontWeight.w500, color: plColor(todayPL)),
               ),
             ],
           ),
@@ -162,12 +162,12 @@ class HoldingDataCells extends StatelessWidget {
             children: [
               Text(
                 '${plSign(h.profitLoss)}${formatNumber(h.profitLoss.abs())}',
-                style: numStyle.copyWith(color: plColor(h.profitLoss)),
+                style: numStyle.copyWith(fontWeight: FontWeight.w500, color: plColor(h.profitLoss)),
               ),
               Text(
                 '${plSign(h.profitLossPercent)}${h.profitLossPercent.toStringAsFixed(2)}%',
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 13,
                   color: plColor(h.profitLossPercent),
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -182,7 +182,7 @@ class HoldingDataCells extends StatelessWidget {
           child: Text(
             '${pctPortfolio.toStringAsFixed(2)}%',
             textAlign: TextAlign.end,
-            style: numStyle,
+            style: numStyle.copyWith(fontWeight: FontWeight.w500),
           ),
         ),
       ],

@@ -40,3 +40,5 @@ coverage/
 
 # Claude Code (local settings may contain sensitive permissions)
 .claude/settings.local.json
+
+gen-lang-client-*.json

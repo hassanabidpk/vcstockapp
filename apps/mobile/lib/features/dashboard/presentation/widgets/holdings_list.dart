@@ -8,7 +8,7 @@ import 'package:vc_stocks_mobile/models/portfolio.dart';
 enum _SortField { marketValue, currentPrice, todayPL, totalPL, pctPortfolio }
 
 // Fixed widths matching HoldingDataCells
-const _kSymbolWidth = 64.0;
+const _kSymbolWidth = 80.0;
 const _kRowHeight = 68.0;
 const _kHeaderHeight = 28.0;
 // Total scrollable data width: 80+10+76+10+76+10+80+10+56 = 408
