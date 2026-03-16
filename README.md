@@ -111,6 +111,17 @@ TWELVE_DATA_BASE_URL=https://api.twelvedata.com
 COINGECKO_BASE_URL=https://api.coingecko.com/api/v3
 SEED_USERNAME=admin
 SEED_PASSWORD=change_me
+
+# Telegram Bot
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+TELEGRAM_WEBHOOK_SECRET=your_webhook_secret
+
+# Google AI (Vertex AI / ADK)
+GOOGLE_CLOUD_PROJECT=your_gcp_project_id
+GOOGLE_CLOUD_LOCATION=global
+GOOGLE_APPLICATION_CREDENTIALS_JSON=base64_encoded_service_account_json
+GEMINI_MODEL=gemini-2.5-pro
 ```
 
 **Frontend** — copy and edit `apps/web/.env.local.example`:
@@ -210,6 +221,73 @@ All routes are versioned under `/v1`. Protected routes require a valid JWT (sent
 |--------|----------|------|-------------|
 | GET | `/health` | Public | Basic health check |
 | GET | `/ready` | Public | Readiness check (DB connectivity) |
+
+### Reports & Telegram Bot
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/v1/reports/generate` | CRON_SECRET | Generate and send a portfolio report |
+| POST | `/v1/telegram/webhook` | Webhook Secret | Telegram bot webhook for `/daily` and `/weekly` commands |
+
+---
+
+## Portfolio Reports (Telegram Bot)
+
+Automated portfolio reports with AI-powered market analysis, delivered via Telegram.
+
+### Pipeline
+
+```
+DataCollector → AIAnalyzer → ReportFormatter → TelegramSender
+```
+
+1. **DataCollector** — Fetches portfolio holdings, current prices, and performance data
+2. **AIAnalyzer** — Uses Google ADK with Gemini (Vertex AI) + Google Search grounding for market insights
+3. **ReportFormatter** — Formats as MarkdownV2 for Telegram (respects 4096 char limit, auto-splits)
+4. **TelegramSender** — Delivers to Telegram group with exponential backoff retry
+
+If AI analysis fails or times out, reports are still sent with data-only content (graceful degradation).
+
+### Triggering Reports
+
+**Via Telegram group commands** (webhook):
+- `/daily` — Daily portfolio report
+- `/weekly` — Weekly report with extended market analysis
+
+**Via cron API** (automated):
+```bash
+curl -X POST https://your-api.vercel.app/v1/reports/generate \
+  -H "Content-Type: application/json" \
+  -H "x-cron-secret: YOUR_CRON_SECRET" \
+  -d '{"type":"daily"}'
+```
+
+### Telegram Bot Setup
+
+1. Create a bot via [@BotFather](https://t.me/BotFather) and get the token
+2. Set commands: `/setcommands` → `daily - Daily report` / `weekly - Weekly report`
+3. Add bot to your group, send a message, then get chat ID:
+   ```bash
+   curl https://api.telegram.org/bot<TOKEN>/getUpdates
+   ```
+4. Register the webhook:
+   ```bash
+   curl "https://api.telegram.org/bot<TOKEN>/setWebhook" \
+     -H "Content-Type: application/json" \
+     -d '{"url":"https://your-api.vercel.app/v1/telegram/webhook","secret_token":"YOUR_SECRET","allowed_updates":["message"]}'
+   ```
+   Note: `secret_token` only allows alphanumeric characters, `_`, and `-`.
+
+### Google Cloud / Vertex AI Setup
+
+1. Create a GCP project and enable the **Vertex AI API**
+2. Create a service account with roles: `Vertex AI User`, `Service Usage Consumer`
+3. Download the JSON key and base64-encode it:
+   ```bash
+   base64 -i service-account.json | tr -d '\n'
+   ```
+4. Set `GOOGLE_APPLICATION_CREDENTIALS_JSON` env var with the base64 string
+5. Set `GEMINI_MODEL` to your preferred model (default: `gemini-2.5-pro`)
 
 ---
 
