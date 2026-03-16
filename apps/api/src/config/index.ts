@@ -31,7 +31,7 @@ export const config = {
 
   // Google AI (Vertex AI / ADK)
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
-  googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || "us-central1",
+  googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || "global",
   googleCredentialsJson: process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "",
 
   get isDev() {

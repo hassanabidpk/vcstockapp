@@ -62,7 +62,7 @@ export const aiAnalyzerService = {
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",
-        model: "gemini-2.5-pro",
+        model: "gemini-3.1-pro-preview",
         instruction: systemPrompt,
         tools: [GOOGLE_SEARCH],
       });
