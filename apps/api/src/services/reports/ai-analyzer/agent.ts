@@ -1,7 +1,6 @@
 import { config } from "../../../config/index.js";
 import { logger } from "../../../utils/logger.js";
 import { getSystemPrompt } from "./prompts.js";
-import { createTools } from "./tools.js";
 import type { CollectedData, AnalysisResult } from "../types.js";
 
 const AGENT_TIMEOUT_MS = 55_000;
@@ -59,14 +58,13 @@ export const aiAnalyzerService = {
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
       process.env.GOOGLE_GENAI_USE_VERTEXAI = "true";
 
-      const tools = await createTools(data);
       const systemPrompt = getSystemPrompt(data.reportType);
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",
         model: "gemini-3.1-pro-preview",
         instruction: systemPrompt,
-        tools: [...tools, GOOGLE_SEARCH],
+        tools: [GOOGLE_SEARCH],
       });
 
       const sessionService = new InMemorySessionService();
@@ -97,12 +95,13 @@ export const aiAnalyzerService = {
         let eventCount = 0;
         for await (const event of events) {
           eventCount++;
-          logger.debug({ eventCount, author: event.author, hasParts: !!event.content?.parts }, "AIAnalyzer: event received");
+          const partTypes = event.content?.parts?.map((p: unknown) => Object.keys(p as object).join(",")) || [];
+          logger.info({ eventCount, author: event.author, partTypes }, "AIAnalyzer: event received");
           if (event.content?.parts) {
             for (const part of event.content.parts) {
               if ("text" in part && part.text) {
                 lastText = part.text;
-                logger.debug({ textLength: part.text.length }, "AIAnalyzer: got text part");
+                logger.info({ textLength: part.text.length, preview: part.text.substring(0, 200) }, "AIAnalyzer: got text");
               }
             }
           }
