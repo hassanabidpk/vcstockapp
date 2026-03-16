@@ -34,6 +34,10 @@ export const holdingService = {
       if (err && typeof err === "object" && "code" in err && err.code === "P2002") {
         throw ApiError.conflict(`Holding for ${data.symbol} on ${data.platform || "default"} already exists in this portfolio`);
       }
+      // SQLite wraps unique constraint as PrismaClientUnknownRequestError
+      if (err && typeof err === "object" && "message" in err && typeof (err as { message: string }).message === "string" && (err as { message: string }).message.includes("UNIQUE constraint failed")) {
+        throw ApiError.conflict(`Holding for ${data.symbol} on ${data.platform || "default"} already exists in this portfolio`);
+      }
       throw err;
     }
   },

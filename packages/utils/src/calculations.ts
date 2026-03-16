@@ -38,7 +38,7 @@ export function calcValuationVerdict(
 }
 
 export function aggregatePortfolio(holdings: HoldingWithPrice[]): PortfolioSummary {
-  const assetTypes: AssetType[] = ["us_stock", "sg_stock", "crypto"];
+  const assetTypes: AssetType[] = ["us_stock", "sg_stock", "hk_stock", "crypto"];
 
   const byAssetType = {} as Record<AssetType, AssetTypeSummary>;
   for (const type of assetTypes) {

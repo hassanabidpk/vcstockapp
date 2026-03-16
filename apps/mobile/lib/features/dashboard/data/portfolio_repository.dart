@@ -75,6 +75,11 @@ class PortfolioRepository {
     await _cache.delete(_portfolioDetailKey(id));
   }
 
+  /// Clear cached history so next provider read fetches fresh from API.
+  Future<void> clearHistoryCache(String id) async {
+    await _cache.delete(_portfolioHistoryKey(id));
+  }
+
   // ---------------------------------------------------------------------------
   // Portfolio History
   // ---------------------------------------------------------------------------

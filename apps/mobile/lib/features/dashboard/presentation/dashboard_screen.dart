@@ -77,8 +77,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async {
+          final selectedId = ref.read(selectedPortfolioProvider);
+          if (selectedId != null) {
+            // Clear cache so providers fetch fresh from API
+            final repo = ref.read(portfolioRepositoryProvider);
+            await repo.clearDetailCache(selectedId);
+            await repo.clearHistoryCache(selectedId);
+          }
           ref.invalidate(portfolioDetailProvider);
           ref.invalidate(portfolioHistoryProvider);
+          // Wait for the detail provider to complete
+          await ref.read(portfolioDetailProvider.future);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
