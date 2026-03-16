@@ -57,13 +57,14 @@ export const aiAnalyzerService = {
       process.env.GOOGLE_APPLICATION_CREDENTIALS = tmpFile;
       process.env.GOOGLE_CLOUD_PROJECT = config.googleCloudProject;
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
+      process.env.GOOGLE_GENAI_USE_VERTEXAI = "true";
 
       const tools = await createTools(data);
       const systemPrompt = getSystemPrompt(data.reportType);
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",
-        model: `vertexai/gemini-3.1-pro-preview`,
+        model: "gemini-3.1-pro-preview",
         instruction: systemPrompt,
         tools: [...tools, GOOGLE_SEARCH],
       });
