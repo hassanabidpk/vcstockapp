@@ -956,7 +956,7 @@ export const aiAnalyzerService = {
       // Create ADK agent with custom tools + Google Search
       const agent = new Agent({
         name: "portfolio_analyst",
-        model: `vertexai/gemini-3.1-pro-preview`,
+        model: `gemini-3.1-pro-preview`,
         instruction: systemPrompt,
         tools: [
           tools.get_portfolio_summary,
