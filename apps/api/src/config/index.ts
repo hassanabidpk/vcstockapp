@@ -24,6 +24,16 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || "dev-jwt-secret-change-in-production",
   cronSecret: process.env.CRON_SECRET || "dev-cron-secret",
 
+  // Telegram Bot
+  telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
+  telegramChatId: process.env.TELEGRAM_CHAT_ID || "",
+  telegramWebhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || "",
+
+  // Google AI (Vertex AI / ADK)
+  googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
+  googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || "us-central1",
+  googleCredentialsJson: process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "",
+
   get isDev() {
     return this.nodeEnv === "development";
   },
