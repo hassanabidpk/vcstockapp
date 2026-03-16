@@ -62,7 +62,7 @@ export const aiAnalyzerService = {
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-2.5-pro",
         instruction: systemPrompt,
         tools: [GOOGLE_SEARCH],
       });
@@ -95,8 +95,11 @@ export const aiAnalyzerService = {
         let eventCount = 0;
         for await (const event of events) {
           eventCount++;
-          const partTypes = event.content?.parts?.map((p: unknown) => Object.keys(p as object).join(",")) || [];
-          logger.info({ eventCount, author: event.author, partTypes }, "AIAnalyzer: event received");
+          const evt = event as Record<string, unknown>;
+          if (evt.errorCode || evt.errorMessage) {
+            logger.error({ errorCode: evt.errorCode, errorMessage: evt.errorMessage }, "AIAnalyzer: agent event error");
+          }
+          logger.info({ eventCount, author: event.author }, "AIAnalyzer: event received");
           if (event.content?.parts) {
             for (const part of event.content.parts) {
               if ("text" in part && part.text) {
