@@ -4,6 +4,7 @@ import 'package:vc_stocks_mobile/core/theme/app_theme.dart';
 import 'package:vc_stocks_mobile/features/auth/providers/auth_provider.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/holdings_list.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/portfolio_pl_chart.dart';
+import 'package:vc_stocks_mobile/models/portfolio_snapshot.dart';
 import 'package:vc_stocks_mobile/features/dashboard/presentation/widgets/portfolio_summary_cards.dart';
 import 'package:vc_stocks_mobile/features/dashboard/data/portfolio_repository.dart';
 import 'package:vc_stocks_mobile/features/dashboard/providers/portfolio_detail_provider.dart';
@@ -166,8 +167,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                     // P/L Chart
                     historyAsync.when(
-                      data: (snapshots) =>
-                          PortfolioPlChart(snapshots: snapshots),
+                      data: (snapshots) => PortfolioPlChart(
+                        snapshots: snapshots,
+                        currentSnapshot: PortfolioSnapshot(
+                          date: '',
+                          totalValue: portfolio.summary.totalValue,
+                          totalCost: portfolio.summary.totalCost,
+                          totalPL: portfolio.summary.totalPL,
+                        ),
+                      ),
                       loading: () => const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: SkeletonCard(),

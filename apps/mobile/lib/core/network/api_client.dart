@@ -1,31 +1,42 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:vc_stocks_mobile/core/network/api_exception.dart';
 import 'package:vc_stocks_mobile/core/network/auth_interceptor.dart';
 import 'package:vc_stocks_mobile/core/storage/secure_storage.dart';
+import 'package:vc_stocks_mobile/features/auth/providers/auth_provider.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final storage = ref.read(secureStorageProvider);
-  return ApiClient(storage: storage);
+  return ApiClient(
+    storage: storage,
+    onUnauthorized: () =>
+        ref.read(authNotifierProvider.notifier).forceLogout(),
+  );
 });
 
 class ApiClient {
   late final Dio dio;
 
-  ApiClient({required SecureStorageService storage}) {
+  ApiClient({
+    required SecureStorageService storage,
+    VoidCallback? onUnauthorized,
+  }) {
     final baseUrl = dotenv.get('API_BASE_URL', fallback: 'http://localhost:4000');
 
     dio = Dio(
       BaseOptions(
         baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
       ),
     );
 
-    dio.interceptors.add(AuthInterceptor(storage: storage));
+    dio.interceptors.add(
+      AuthInterceptor(storage: storage, onUnauthorized: onUnauthorized),
+    );
   }
 
   /// GET request, returns the `data` field from API response.

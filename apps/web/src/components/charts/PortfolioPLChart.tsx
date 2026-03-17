@@ -19,6 +19,7 @@ interface SnapshotData {
 
 interface ChartDataPoint extends SnapshotData {
   dailyChange: number | null;
+  isCurrent?: boolean;
 }
 
 function fmtSigned(v: number) {
@@ -44,7 +45,9 @@ function CustomTooltip({ active, payload, label, isDark }: any) {
         boxShadow: isDark ? "none" : "0 2px 8px rgba(0,0,0,0.1)",
       }}
     >
-      <p style={{ color: "#94a3b8", marginBottom: 6, fontSize: 11 }}>{label}</p>
+      <p style={{ color: "#94a3b8", marginBottom: 6, fontSize: 11 }}>
+        {label}{d.isCurrent ? " · Live" : ""}
+      </p>
       <p>
         P/L: <span style={{ color: plColor, fontWeight: 600 }}>${d.totalPL.toFixed(2)}</span>
       </p>
@@ -57,11 +60,30 @@ function CustomTooltip({ active, payload, label, isDark }: any) {
   );
 }
 
-export function PortfolioPLChart({ data }: { data: SnapshotData[] }) {
+interface PortfolioPLChartProps {
+  data: SnapshotData[];
+  currentSummary?: { totalValue: number; totalCost: number; totalPL: number };
+}
+
+export function PortfolioPLChart({ data, currentSummary }: PortfolioPLChartProps) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  if (!data || data.length === 0) {
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // Merge live current data as today's point
+  let mergedData = [...data];
+  if (currentSummary) {
+    const last = mergedData[mergedData.length - 1];
+    const todayEntry = { date: todayStr, ...currentSummary };
+    if (last?.date === todayStr) {
+      mergedData[mergedData.length - 1] = todayEntry;
+    } else {
+      mergedData = [...mergedData, todayEntry];
+    }
+  }
+
+  if (mergedData.length === 0) {
     return (
       <div className="h-48 flex items-center justify-center dark:text-slate-500 text-slate-400 text-sm">
         P/L trend chart will appear after daily snapshots are recorded
@@ -69,12 +91,13 @@ export function PortfolioPLChart({ data }: { data: SnapshotData[] }) {
     );
   }
 
-  const chartData: ChartDataPoint[] = data.map((d, i) => ({
+  const chartData: ChartDataPoint[] = mergedData.map((d, i) => ({
     ...d,
-    dailyChange: i > 0 ? d.totalPL - data[i - 1].totalPL : null,
+    dailyChange: i > 0 ? d.totalPL - mergedData[i - 1].totalPL : null,
+    isCurrent: d.date === todayStr && !!currentSummary,
   }));
 
-  const isProfit = data.length > 0 && data[data.length - 1].totalPL >= 0;
+  const isProfit = chartData[chartData.length - 1].totalPL >= 0;
   const gridColor = isDark ? "#1e293b" : "#e2e8f0";
   const tickColor = isDark ? "#64748b" : "#94a3b8";
 
@@ -86,8 +109,9 @@ export function PortfolioPLChart({ data }: { data: SnapshotData[] }) {
           dataKey="date"
           tick={{ fill: tickColor, fontSize: 11 }}
           tickFormatter={(d) => {
-            const date = new Date(d);
-            return `${date.getMonth() + 1}/${date.getDate()}`;
+            const [, m, day] = d.split("-");
+            const label = `${parseInt(m)}/${parseInt(day)}`;
+            return d === todayStr ? `${label}*` : label;
           }}
         />
         <YAxis

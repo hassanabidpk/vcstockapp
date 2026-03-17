@@ -9,7 +9,14 @@ import 'package:vc_stocks_mobile/models/portfolio_snapshot.dart';
 class PortfolioPlChart extends StatefulWidget {
   final List<PortfolioSnapshot> snapshots;
 
-  const PortfolioPlChart({super.key, required this.snapshots});
+  /// Live current data to append as today's point, marked with *.
+  final PortfolioSnapshot? currentSnapshot;
+
+  const PortfolioPlChart({
+    super.key,
+    required this.snapshots,
+    this.currentSnapshot,
+  });
 
   @override
   State<PortfolioPlChart> createState() => _PortfolioPlChartState();
@@ -55,7 +62,23 @@ class _PortfolioPlChartState extends State<PortfolioPlChart>
 
   @override
   Widget build(BuildContext context) {
-    final snapshots = widget.snapshots;
+    // Merge live current snapshot as today's point
+    final today = DateTime.now();
+    final todayStr = DateFormat('yyyy-MM-dd').format(today);
+
+    final snapshots = List<PortfolioSnapshot>.from(widget.snapshots);
+    if (widget.currentSnapshot != null) {
+      final current = widget.currentSnapshot!.copyWith(date: todayStr);
+      if (snapshots.isNotEmpty && snapshots.last.date == todayStr) {
+        snapshots[snapshots.length - 1] = current;
+      } else {
+        snapshots.add(current);
+      }
+    }
+
+    final currentIdx =
+        widget.currentSnapshot != null ? snapshots.length - 1 : -1;
+
     if (snapshots.length < 2) {
       return Card(
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -224,13 +247,19 @@ class _PortfolioPlChartState extends State<PortfolioPlChart>
                             }
                             final month = int.tryParse(dateParts[1]) ?? 0;
                             final day = int.tryParse(dateParts[2]) ?? 0;
+                            final isLive = idx == currentIdx;
                             return SideTitleWidget(
                               axisSide: meta.axisSide,
                               child: Text(
-                                '$month/$day',
+                                '$month/$day${isLive ? '*' : ''}',
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: axisLabelColor,
+                                  color: isLive
+                                      ? lineColor
+                                      : axisLabelColor,
+                                  fontWeight: isLive
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             );
@@ -278,8 +307,9 @@ class _PortfolioPlChartState extends State<PortfolioPlChart>
                             final idx = spot.x.toInt();
                             if (idx >= 0 && idx < snapshots.length) {
                               final snapshot = snapshots[idx];
+                              final isLive = idx == currentIdx;
                               return LineTooltipItem(
-                                '${snapshot.date}\n${formatCurrency(snapshot.totalPL)}',
+                                '${snapshot.date}${isLive ? ' · Live' : ''}\n${formatCurrency(snapshot.totalPL)}',
                                 TextStyle(
                                   color: lineColor,
                                   fontWeight: FontWeight.w600,
