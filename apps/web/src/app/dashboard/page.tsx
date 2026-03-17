@@ -50,7 +50,7 @@ export default function DashboardPage() {
       {/* P/L Trend Chart */}
       <Card className="mb-6">
         <h3 className="font-semibold mb-3">Portfolio P/L Trend</h3>
-        <PortfolioPLChart data={history} />
+        <PortfolioPLChart data={history} currentSummary={portfolio.summary} />
       </Card>
 
       {/* Holdings by Asset Type */}

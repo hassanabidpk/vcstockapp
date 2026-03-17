@@ -22,6 +22,13 @@ export async function apiClient<T>(path: string, options?: RequestInit): Promise
   const json = await res.json();
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      // Clear the auth sentinel cookie and redirect to login
+      document.cookie = "auth=; path=/; max-age=0; SameSite=Lax";
+      window.location.href = "/login";
+      // Return a never-resolving promise so no further code runs
+      return new Promise(() => {});
+    }
     const err = json.error || { code: "UNKNOWN", message: "Unknown error" };
     throw new ApiClientError(err.code, err.message);
   }
