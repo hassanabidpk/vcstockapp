@@ -5,17 +5,29 @@ import type { CollectedData, AnalysisResult } from "../types.js";
 
 const AGENT_TIMEOUT_MS = 120_000;
 
-function parseAnalysisResult(text: string, reportType: string): AnalysisResult {
+function parseAnalysisResult(text: string): AnalysisResult {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
+
+      // Validate and normalize holdingActions
+      const validActions = new Set(["hold", "trim", "accumulate", "watch"]);
+      const holdingActions = Array.isArray(parsed.holdingActions)
+        ? parsed.holdingActions
+            .filter((a: Record<string, unknown>) => a.symbol && a.reasoning)
+            .map((a: Record<string, unknown>) => ({
+              symbol: String(a.symbol),
+              action: validActions.has(String(a.action)) ? String(a.action) : "watch",
+              reasoning: String(a.reasoning),
+            }))
+        : [];
+
       return {
         marketOverview: parsed.marketOverview || "No market overview available.",
-        topMovers: parsed.topMovers || "No top movers data available.",
-        insights: parsed.insights || "No insights available.",
-        sgMarket: reportType === "weekly" ? parsed.sgMarket : undefined,
-        cryptoMarket: reportType === "weekly" ? parsed.cryptoMarket : undefined,
+        holdingActions,
+        risks: parsed.risks || "No risk assessment available.",
+        outlook: parsed.outlook || "No outlook available.",
       };
     }
   } catch {
@@ -23,9 +35,10 @@ function parseAnalysisResult(text: string, reportType: string): AnalysisResult {
   }
 
   return {
-    marketOverview: "Unable to parse structured market overview.",
-    topMovers: "Unable to parse top movers.",
-    insights: text || "No analysis available.",
+    marketOverview: text || "No analysis available.",
+    holdingActions: [],
+    risks: "Unable to parse risk assessment.",
+    outlook: "Unable to parse outlook.",
   };
 }
 
@@ -131,7 +144,7 @@ export const aiAnalyzerService = {
       const duration = Date.now() - startTime;
       logger.info({ reportType: data.reportType, duration }, "AIAnalyzer: done");
 
-      return parseAnalysisResult(result, data.reportType);
+      return parseAnalysisResult(result);
     } catch (err) {
       logger.error({ err }, "AIAnalyzer: failed");
       return null;
