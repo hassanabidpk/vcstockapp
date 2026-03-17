@@ -76,7 +76,8 @@ export const aiAnalyzerService = {
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
       process.env.GOOGLE_GENAI_USE_VERTEXAI = "true";
 
-      const systemPrompt = getSystemPrompt(data.reportType);
+      const portfolioNames = data.portfolios.map((p) => p.name);
+      const systemPrompt = getSystemPrompt(data.reportType, portfolioNames);
 
       const agent = new LlmAgent({
         name: "portfolio_analyst",

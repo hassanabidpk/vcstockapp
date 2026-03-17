@@ -24,43 +24,46 @@ Market coverage requirements:
 - Geopolitical tensions or Fed rate decisions if relevant to market moves
 `;
 
-const OUTPUT_FORMAT = `
+function buildOutputFormat(portfolioNames: string[]): string {
+  const exampleAnalyses = portfolioNames.map((name, i) => {
+    const example = i === 0
+      ? `      "holdingActions": [
+        {"symbol": "PLTR", "action": "hold", "reasoning": "62% above entry but dropped 3 of last 5 days — hold but watch support"},
+        {"symbol": "TSLA", "action": "watch", "reasoning": "Testing support, 8% below entry — wait for bounce confirmation"}
+      ]`
+      : `      "holdingActions": [
+        {"symbol": "NVDA", "action": "hold", "reasoning": "35% above entry, catalyst ahead — hold for breakout"}
+      ]`;
+    return `    {
+      "portfolioName": "${name}",
+${example},
+      "risks": "1-2 sentences on the biggest risk to this portfolio right now",
+      "outlook": "1-2 sentences on what to watch next for this portfolio"
+    }`;
+  });
+
+  return `
 ${MARKET_COVERAGE}
-For each portfolio, provide a separate analysis in the portfolioAnalyses array. Use the exact portfolio name from the data. In holdingActions for each portfolio, cover the top 3-5 most noteworthy holdings — biggest movers, most at-risk, or best opportunities. Do not list every holding.
+For each portfolio in the data, provide a separate analysis in the portfolioAnalyses array. Use the EXACT portfolio name from the data. In holdingActions for each portfolio, cover the top 3-5 most noteworthy holdings — biggest movers, most at-risk, or best opportunities. Do not list every holding.
 
 Output EXACTLY this JSON (no markdown, no code fences):
 {
   "marketOverview": "2-3 sentences on US indices + macro, connecting index moves to holdings. Mention SG/HK/crypto moves when relevant.",
   "portfolioAnalyses": [
-    {
-      "portfolioName": "Hassan",
-      "holdingActions": [
-        {"symbol": "PLTR", "action": "hold", "reasoning": "62% above $18.50 entry but dropped 3 of last 5 days — hold but watch $48 support"},
-        {"symbol": "TSLA", "action": "watch", "reasoning": "Testing $180 support, 8% below entry — wait for bounce confirmation"}
-      ],
-      "risks": "1-2 sentences on the biggest risk to this portfolio right now",
-      "outlook": "1-2 sentences on what to watch next for this portfolio"
-    },
-    {
-      "portfolioName": "Siew Fen",
-      "holdingActions": [
-        {"symbol": "NVDA", "action": "hold", "reasoning": "35% above entry, GTC conference catalyst — hold for breakout above $184"}
-      ],
-      "risks": "1-2 sentences on risk specific to this portfolio",
-      "outlook": "1-2 sentences on outlook specific to this portfolio"
-    }
+${exampleAnalyses.join(",\n")}
   ]
 }
 
 Valid actions: "hold", "trim", "accumulate", "watch"
 `;
+}
 
 const WEEKLY_ADDENDUM = `
 Additionally for this weekly report: include weekly performance context. Compare current portfolio state to the snapshot data from last week. Note which holdings drove the biggest weekly gains or losses.
 `;
 
-export function getSystemPrompt(reportType: ReportType): string {
-  const base = BASE_INSTRUCTION + OUTPUT_FORMAT;
+export function getSystemPrompt(reportType: ReportType, portfolioNames: string[]): string {
+  const base = BASE_INSTRUCTION + buildOutputFormat(portfolioNames);
   if (reportType === "weekly") {
     return base + WEEKLY_ADDENDUM;
   }
