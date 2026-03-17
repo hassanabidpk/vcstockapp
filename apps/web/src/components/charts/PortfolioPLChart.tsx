@@ -109,8 +109,8 @@ export function PortfolioPLChart({ data, currentSummary }: PortfolioPLChartProps
           dataKey="date"
           tick={{ fill: tickColor, fontSize: 11 }}
           tickFormatter={(d) => {
-            const date = new Date(d);
-            const label = `${date.getMonth() + 1}/${date.getDate()}`;
+            const [, m, day] = d.split("-");
+            const label = `${parseInt(m)}/${parseInt(day)}`;
             return d === todayStr ? `${label}*` : label;
           }}
         />
