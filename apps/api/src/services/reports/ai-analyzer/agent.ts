@@ -5,29 +5,36 @@ import type { CollectedData, AnalysisResult } from "../types.js";
 
 const AGENT_TIMEOUT_MS = 120_000;
 
+function parseHoldingActions(raw: unknown): { symbol: string; action: string; reasoning: string }[] {
+  const validActions = new Set(["hold", "trim", "accumulate", "watch"]);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((a: Record<string, unknown>) => a.symbol && a.reasoning)
+    .map((a: Record<string, unknown>) => ({
+      symbol: String(a.symbol),
+      action: validActions.has(String(a.action)) ? String(a.action) : "watch",
+      reasoning: String(a.reasoning),
+    }));
+}
+
 function parseAnalysisResult(text: string): AnalysisResult {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
 
-      // Validate and normalize holdingActions
-      const validActions = new Set(["hold", "trim", "accumulate", "watch"]);
-      const holdingActions = Array.isArray(parsed.holdingActions)
-        ? parsed.holdingActions
-            .filter((a: Record<string, unknown>) => a.symbol && a.reasoning)
-            .map((a: Record<string, unknown>) => ({
-              symbol: String(a.symbol),
-              action: validActions.has(String(a.action)) ? String(a.action) : "watch",
-              reasoning: String(a.reasoning),
-            }))
+      const portfolioAnalyses = Array.isArray(parsed.portfolioAnalyses)
+        ? parsed.portfolioAnalyses.map((pa: Record<string, unknown>) => ({
+            portfolioName: String(pa.portfolioName || "Unknown"),
+            holdingActions: parseHoldingActions(pa.holdingActions),
+            risks: String(pa.risks || "No risk assessment available."),
+            outlook: String(pa.outlook || "No outlook available."),
+          }))
         : [];
 
       return {
         marketOverview: parsed.marketOverview || "No market overview available.",
-        holdingActions,
-        risks: parsed.risks || "No risk assessment available.",
-        outlook: parsed.outlook || "No outlook available.",
+        portfolioAnalyses,
       };
     }
   } catch {
@@ -36,9 +43,7 @@ function parseAnalysisResult(text: string): AnalysisResult {
 
   return {
     marketOverview: text || "No analysis available.",
-    holdingActions: [],
-    risks: "Unable to parse risk assessment.",
-    outlook: "Unable to parse outlook.",
+    portfolioAnalyses: [],
   };
 }
 

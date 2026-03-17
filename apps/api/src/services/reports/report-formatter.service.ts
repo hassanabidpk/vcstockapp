@@ -1,4 +1,4 @@
-import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, FormattedReport } from "./types.js";
+import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, PortfolioAnalysis, FormattedReport } from "./types.js";
 
 const MAX_MSG_LEN = 4096;
 
@@ -186,31 +186,40 @@ const ACTION_EMOJI: Record<string, string> = {
   trim: "🔴",
 };
 
-function buildAIMessage(analysis: AnalysisResult): string {
-  const sections: string[] = [];
+function buildAIMessages(analysis: AnalysisResult): string[] {
+  const result: string[] = [];
 
-  sections.push("🤖 *AI ANALYSIS*");
+  for (let i = 0; i < analysis.portfolioAnalyses.length; i++) {
+    const pa = analysis.portfolioAnalyses[i];
+    const sections: string[] = [];
 
-  // Market overview
-  sections.push(`📈 *MARKET*\n${esc(analysis.marketOverview)}`);
+    sections.push(`🤖 *AI ANALYSIS — ${esc(pa.portfolioName)}*`);
 
-  // Holding actions
-  if (analysis.holdingActions.length > 0) {
-    const actionLines = analysis.holdingActions.map((a) => {
-      const emoji = ACTION_EMOJI[a.action] || "🟡";
-      const label = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-      return `${emoji} \`${esc(a.symbol)}\` — ${esc(label)}\\. ${esc(a.reasoning)}`;
-    });
-    sections.push(`⚡ *ACTIONS*\n${actionLines.join("\n")}`);
+    // Market overview only in first message
+    if (i === 0) {
+      sections.push(`📈 *MARKET*\n${esc(analysis.marketOverview)}`);
+    }
+
+    // Holding actions
+    if (pa.holdingActions.length > 0) {
+      const actionLines = pa.holdingActions.map((a) => {
+        const emoji = ACTION_EMOJI[a.action] || "🟡";
+        const label = a.action.charAt(0).toUpperCase() + a.action.slice(1);
+        return `${emoji} \`${esc(a.symbol)}\` — ${esc(label)}\\. ${esc(a.reasoning)}`;
+      });
+      sections.push(`⚡ *ACTIONS*\n${actionLines.join("\n")}`);
+    }
+
+    // Risks
+    sections.push(`⚠️ *RISKS*\n${esc(pa.risks)}`);
+
+    // Outlook
+    sections.push(`🔭 *OUTLOOK*\n${esc(pa.outlook)}`);
+
+    result.push(sections.join("\n\n"));
   }
 
-  // Risks
-  sections.push(`⚠️ *RISKS*\n${esc(analysis.risks)}`);
-
-  // Outlook
-  sections.push(`🔭 *OUTLOOK*\n${esc(analysis.outlook)}`);
-
-  return sections.join("\n\n");
+  return result;
 }
 
 // ── Message splitting ────────────────────────────────────────────────────────
@@ -282,10 +291,11 @@ export const reportFormatterService = {
     const dataText = sections.join("\n\n");
     const messages = splitMessages(dataText);
 
-    // AI message — separate, full 4096 chars available
+    // AI messages — one per portfolio, each gets full 4096 chars
     if (analysis) {
-      const aiText = buildAIMessage(analysis);
-      messages.push(...splitMessages(aiText));
+      for (const aiText of buildAIMessages(analysis)) {
+        messages.push(...splitMessages(aiText));
+      }
     }
 
     return { messages };

@@ -2,7 +2,7 @@ import type { ReportType } from "../types.js";
 
 const BASE_INSTRUCTION = `You are a concise portfolio analyst reviewing the owner's actual holdings. The report already shows portfolio values, P/L, and top movers — do NOT repeat that data.
 
-Your job: connect market events to the specific holdings across ALL portfolios and give actionable, symbol-specific recommendations. The data contains multiple portfolios — analyze holdings from every portfolio, not just the first one.
+Your job: connect market events to the specific holdings in each portfolio and give actionable, symbol-specific recommendations. The data contains multiple portfolios — provide a SEPARATE analysis for each portfolio.
 
 Rules:
 - Plain text only, no markdown, no bullet points
@@ -26,17 +26,30 @@ Market coverage requirements:
 
 const OUTPUT_FORMAT = `
 ${MARKET_COVERAGE}
-In holdingActions, cover the top 3-5 most noteworthy holdings across ALL portfolios — biggest movers, most at-risk, or best opportunities. Do not list every holding, but make sure to include noteworthy holdings from each portfolio.
+For each portfolio, provide a separate analysis in the portfolioAnalyses array. Use the exact portfolio name from the data. In holdingActions for each portfolio, cover the top 3-5 most noteworthy holdings — biggest movers, most at-risk, or best opportunities. Do not list every holding.
 
 Output EXACTLY this JSON (no markdown, no code fences):
 {
-  "marketOverview": "2-3 sentences on US indices + macro, connecting index moves to specific holdings in the portfolio. Mention SG/HK/crypto moves when relevant to holdings.",
-  "holdingActions": [
-    {"symbol": "PLTR", "action": "hold", "reasoning": "62% above $18.50 entry but dropped 3 of last 5 days — hold but watch $48 support"},
-    {"symbol": "TSLA", "action": "watch", "reasoning": "Testing $180 support, 8% below entry — wait for bounce confirmation"}
-  ],
-  "risks": "1-2 sentences on the biggest risk to this portfolio right now, naming specific exposed holdings",
-  "outlook": "1-2 sentences on what to watch next — earnings dates, price levels, catalysts for specific holdings"
+  "marketOverview": "2-3 sentences on US indices + macro, connecting index moves to holdings. Mention SG/HK/crypto moves when relevant.",
+  "portfolioAnalyses": [
+    {
+      "portfolioName": "Hassan",
+      "holdingActions": [
+        {"symbol": "PLTR", "action": "hold", "reasoning": "62% above $18.50 entry but dropped 3 of last 5 days — hold but watch $48 support"},
+        {"symbol": "TSLA", "action": "watch", "reasoning": "Testing $180 support, 8% below entry — wait for bounce confirmation"}
+      ],
+      "risks": "1-2 sentences on the biggest risk to this portfolio right now",
+      "outlook": "1-2 sentences on what to watch next for this portfolio"
+    },
+    {
+      "portfolioName": "Siew Fen",
+      "holdingActions": [
+        {"symbol": "NVDA", "action": "hold", "reasoning": "35% above entry, GTC conference catalyst — hold for breakout above $184"}
+      ],
+      "risks": "1-2 sentences on risk specific to this portfolio",
+      "outlook": "1-2 sentences on outlook specific to this portfolio"
+    }
+  ]
 }
 
 Valid actions: "hold", "trim", "accumulate", "watch"
