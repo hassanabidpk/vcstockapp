@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:vc_stocks_mobile/core/theme/app_theme.dart';
 import 'package:vc_stocks_mobile/core/utils/formatters.dart';
@@ -235,10 +236,17 @@ class _PortfolioPlChartState extends State<PortfolioPlChart>
                             if (idx < 0 || idx >= snapshots.length) {
                               return const SizedBox.shrink();
                             }
-                            // Only show labels at evenly-spaced positions
-                            if (idx % labelStep != 0 &&
-                                idx != snapshots.length - 1) {
-                              return const SizedBox.shrink();
+                            // Always show the last (today*) label.
+                            // Show stepped labels only if they won't
+                            // overlap with the last label.
+                            final isLast = idx == snapshots.length - 1;
+                            if (!isLast) {
+                              final onStep = idx % labelStep == 0;
+                              final tooClose =
+                                  (snapshots.length - 1 - idx) < labelStep;
+                              if (!onStep || tooClose) {
+                                return const SizedBox.shrink();
+                              }
                             }
                             final dateParts =
                                 snapshots[idx].date.split('-');
