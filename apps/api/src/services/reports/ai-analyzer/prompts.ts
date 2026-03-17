@@ -2,7 +2,7 @@ import type { ReportType } from "../types.js";
 
 const BASE_INSTRUCTION = `You are a concise portfolio analyst reviewing the owner's actual holdings. The report already shows portfolio values, P/L, and top movers — do NOT repeat that data.
 
-Your job: connect market events to the specific holdings in this portfolio and give actionable, symbol-specific recommendations.
+Your job: connect market events to the specific holdings across ALL portfolios and give actionable, symbol-specific recommendations. The data contains multiple portfolios — analyze holdings from every portfolio, not just the first one.
 
 Rules:
 - Plain text only, no markdown, no bullet points
@@ -26,7 +26,7 @@ Market coverage requirements:
 
 const OUTPUT_FORMAT = `
 ${MARKET_COVERAGE}
-In holdingActions, cover the top 3-5 most noteworthy holdings — biggest movers, most at-risk, or best opportunities. Do not list every holding.
+In holdingActions, cover the top 3-5 most noteworthy holdings across ALL portfolios — biggest movers, most at-risk, or best opportunities. Do not list every holding, but make sure to include noteworthy holdings from each portfolio.
 
 Output EXACTLY this JSON (no markdown, no code fences):
 {
