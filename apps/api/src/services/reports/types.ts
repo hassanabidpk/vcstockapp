@@ -59,12 +59,22 @@ export interface CollectedData {
   history: Record<string, SnapshotEntry[]>;
 }
 
+export interface HoldingAction {
+  symbol: string;
+  action: "hold" | "trim" | "accumulate" | "watch";
+  reasoning: string;
+}
+
+export interface PortfolioAnalysis {
+  portfolioName: string;
+  holdingActions: HoldingAction[];
+  risks: string;
+  outlook: string;
+}
+
 export interface AnalysisResult {
   marketOverview: string;
-  topMovers: string;
-  insights: string;
-  sgMarket?: string;
-  cryptoMarket?: string;
+  portfolioAnalyses: PortfolioAnalysis[];
 }
 
 export interface FormattedReport {

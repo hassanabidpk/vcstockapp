@@ -1,4 +1,4 @@
-import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, FormattedReport } from "./types.js";
+import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, PortfolioAnalysis, FormattedReport } from "./types.js";
 
 const MAX_MSG_LEN = 4096;
 
@@ -179,41 +179,47 @@ function buildAssetBreakdown(portfolios: CollectedPortfolio[]): string {
   return `📊 *BREAKDOWN*\n${parts.join("\n")}`;
 }
 
-function buildAI(analysis: AnalysisResult, budget: number): string {
-  const sections: { emoji: string; title: string; text: string; priority: number }[] = [
-    { emoji: "📈", title: "MARKET", text: analysis.marketOverview, priority: 1 },
-    { emoji: "💡", title: "INSIGHTS", text: analysis.insights, priority: 2 },
-  ];
+const ACTION_EMOJI: Record<string, string> = {
+  hold: "🟢",
+  accumulate: "🔵",
+  watch: "🟡",
+  trim: "🔴",
+};
 
-  if (analysis.sgMarket) {
-    sections.push({ emoji: "🇸🇬", title: "SG", text: analysis.sgMarket, priority: 3 });
-  }
-  if (analysis.cryptoMarket) {
-    sections.push({ emoji: "🪙", title: "CRYPTO", text: analysis.cryptoMarket, priority: 4 });
-  }
-
-  // Calculate overhead per section (emoji + title + formatting + newlines)
-  const overhead = sections.length * 25;
-  const textBudget = budget - overhead;
-
-  if (textBudget <= 0) return "";
-
-  const totalRaw = sections.reduce((s, sec) => s + sec.text.length, 0);
+function buildAIMessages(analysis: AnalysisResult): string[] {
   const result: string[] = [];
-  let used = 0;
 
-  for (const sec of sections.sort((a, b) => a.priority - b.priority)) {
-    const share = Math.max(80, Math.floor((sec.text.length / Math.max(totalRaw, 1)) * textBudget));
-    const remaining = textBudget - used;
-    const max = Math.min(share, remaining);
-    if (max <= 30) break;
+  for (let i = 0; i < analysis.portfolioAnalyses.length; i++) {
+    const pa = analysis.portfolioAnalyses[i];
+    const sections: string[] = [];
 
-    const trimmed = sec.text.length <= max ? sec.text : sec.text.substring(0, max - 3) + "...";
-    result.push(`${sec.emoji} *${sec.title}*\n${esc(trimmed)}`);
-    used += trimmed.length + 25;
+    sections.push(`🤖 *AI ANALYSIS — ${esc(pa.portfolioName)}*`);
+
+    // Market overview only in first message
+    if (i === 0) {
+      sections.push(`📈 *MARKET*\n${esc(analysis.marketOverview)}`);
+    }
+
+    // Holding actions
+    if (pa.holdingActions.length > 0) {
+      const actionLines = pa.holdingActions.map((a) => {
+        const emoji = ACTION_EMOJI[a.action] || "🟡";
+        const label = a.action.charAt(0).toUpperCase() + a.action.slice(1);
+        return `${emoji} \`${esc(a.symbol)}\` — ${esc(label)}\\. ${esc(a.reasoning)}`;
+      });
+      sections.push(`⚡ *ACTIONS*\n${actionLines.join("\n")}`);
+    }
+
+    // Risks
+    sections.push(`⚠️ *RISKS*\n${esc(pa.risks)}`);
+
+    // Outlook
+    sections.push(`🔭 *OUTLOOK*\n${esc(pa.outlook)}`);
+
+    result.push(sections.join("\n\n"));
   }
 
-  return result.join("\n\n");
+  return result;
 }
 
 // ── Message splitting ────────────────────────────────────────────────────────
@@ -267,7 +273,7 @@ export const reportFormatterService = {
       );
     }
 
-    // Asset breakdown (weekly only — saves space on daily)
+    // Asset breakdown (weekly only)
     if (isWeekly) {
       const breakdown = buildAssetBreakdown(data.portfolios);
       if (breakdown) sections.push(breakdown);
@@ -279,22 +285,19 @@ export const reportFormatterService = {
 
     // Footer
     const footer = `💱 \`USD/SGD ${esc(data.usdToSgd.toFixed(4))}\` · \`USD/HKD ${esc(data.usdToHkd.toFixed(4))}\``;
+    sections.push(footer);
 
-    // Calculate remaining space for AI analysis
-    const dataSections = sections.join("\n\n") + "\n\n" + footer;
-    const dataLen = dataSections.length;
+    // Data message(s) — split if exceeds Telegram limit
+    const dataText = sections.join("\n\n");
+    const messages = splitMessages(dataText);
 
+    // AI messages — one per portfolio, each gets full 4096 chars
     if (analysis) {
-      const aiBudget = Math.max(0, MAX_MSG_LEN - dataLen - 10);
-      if (aiBudget > 100) {
-        const aiText = buildAI(analysis, aiBudget);
-        if (aiText) sections.push(aiText);
+      for (const aiText of buildAIMessages(analysis)) {
+        messages.push(...splitMessages(aiText));
       }
     }
 
-    sections.push(footer);
-
-    const fullText = sections.join("\n\n");
-    return { messages: splitMessages(fullText) };
+    return { messages };
   },
 };
