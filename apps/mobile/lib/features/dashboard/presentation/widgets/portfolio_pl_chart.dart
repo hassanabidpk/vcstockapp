@@ -64,8 +64,7 @@ class _PortfolioPlChartState extends State<PortfolioPlChart>
   Widget build(BuildContext context) {
     // Merge live current snapshot as today's point
     final today = DateTime.now();
-    final todayStr =
-        '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayStr = DateFormat('yyyy-MM-dd').format(today);
 
     final snapshots = List<PortfolioSnapshot>.from(widget.snapshots);
     if (widget.currentSnapshot != null) {
