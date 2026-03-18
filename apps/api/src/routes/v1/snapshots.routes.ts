@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { config } from "../../config/index.js";
+import { cacheService } from "../../services/cache.service.js";
 import { portfolioService } from "../../services/portfolio.service.js";
 import { logger } from "../../utils/logger.js";
 
@@ -16,6 +17,10 @@ router.post("/take-all", async (req: Request, res: Response) => {
   }
 
   try {
+    // Invalidate price cache so snapshots fetch fresh closing prices
+    await cacheService.invalidateAll();
+    logger.info("Price cache invalidated before snapshot run");
+
     const portfolios = await portfolioService.listAll();
     const results: Array<{ id: string; name: string; status: string }> = [];
 

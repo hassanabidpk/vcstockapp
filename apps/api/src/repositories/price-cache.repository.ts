@@ -53,6 +53,12 @@ export const priceCacheRepository = {
     });
   },
 
+  async invalidateAll() {
+    await prisma.priceCache.updateMany({
+      data: { expiresAt: new Date(0) },
+    });
+  },
+
   async upsertHistory(data: {
     symbol: string;
     date: Date;

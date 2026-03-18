@@ -51,6 +51,11 @@ export const cacheService = {
     return priceCacheRepository.upsert({ ...data, expiresAt });
   },
 
+  /** Invalidate all cached prices so the next fetch forces a fresh API call */
+  async invalidateAll() {
+    await priceCacheRepository.invalidateAll();
+  },
+
   async getHistory(symbol: string, from: Date, to: Date) {
     return priceCacheRepository.findHistory(symbol, from, to);
   },
