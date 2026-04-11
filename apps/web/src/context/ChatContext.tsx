@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { getFirebaseApp } from "@/lib/firebase";
-import { getAI, getGenerativeModel, type ChatSession } from "firebase/ai";
+import { getAI, getGenerativeModel, VertexAIBackend, type ChatSession } from "firebase/ai";
 import { usePortfolioContext } from "./PortfolioContext";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import type { PortfolioData } from "@/lib/api-client";
@@ -92,7 +92,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
 
     const app = getFirebaseApp();
-    const ai = getAI(app);
+    const ai = getAI(app, { backend: new VertexAIBackend("global") });
     const model = getGenerativeModel(ai, {
       model: "gemini-3.1-pro-preview",
       systemInstruction: buildSystemPrompt(portfolio),
