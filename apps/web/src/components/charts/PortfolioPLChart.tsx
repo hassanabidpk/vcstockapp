@@ -102,6 +102,7 @@ export function PortfolioPLChart({ data, currentSummary }: PortfolioPLChartProps
   const tickColor = isDark ? "#64748b" : "#94a3b8";
 
   return (
+    <div className="select-none [-webkit-tap-highlight-color:transparent]">
     <ResponsiveContainer width="100%" height={200}>
       <AreaChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
@@ -128,5 +129,6 @@ export function PortfolioPLChart({ data, currentSummary }: PortfolioPLChartProps
         />
       </AreaChart>
     </ResponsiveContainer>
+    </div>
   );
 }

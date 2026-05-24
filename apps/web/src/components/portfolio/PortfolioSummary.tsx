@@ -31,7 +31,7 @@ export function PortfolioSummary({
       : "dark:text-red-400 text-red-500";
 
   return (
-    <div className="flex items-start justify-between mb-6 px-1">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 px-1">
       {/* Left: Net Assets */}
       <div>
         <p className="text-sm dark:text-slate-400 text-slate-500">Net Assets</p>
@@ -49,12 +49,12 @@ export function PortfolioSummary({
         )}
       </div>
 
-      {/* Right: P/L columns */}
-      <div className="flex gap-6">
+      {/* Right: P/L columns — stacked cards on mobile, inline on sm+ */}
+      <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-6">
         {/* Total P/L */}
-        <div className="text-right">
+        <div className="text-left sm:text-right rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-slate-900/50 bg-white p-3 sm:p-0 sm:border-0 sm:bg-transparent sm:rounded-none">
           <p className="text-sm dark:text-slate-400 text-slate-500">Total P/L</p>
-          <p className={`text-xl font-bold ${totalPlColor}`}>
+          <p className={`text-xl font-bold whitespace-nowrap ${totalPlColor}`}>
             {formatSign(summary.totalPL)}
             {formatCurrency(summary.totalPL)}
           </p>
@@ -65,9 +65,9 @@ export function PortfolioSummary({
         </div>
 
         {/* Today's P/L */}
-        <div className="text-right">
+        <div className="text-left sm:text-right rounded-xl border dark:border-slate-800 border-slate-200 dark:bg-slate-900/50 bg-white p-3 sm:p-0 sm:border-0 sm:bg-transparent sm:rounded-none">
           <p className="text-sm dark:text-slate-400 text-slate-500">Today&apos;s P/L</p>
-          <p className={`text-xl font-bold ${dayPlColor}`}>
+          <p className={`text-xl font-bold whitespace-nowrap ${dayPlColor}`}>
             {formatSign(summary.dayChange)}
             {formatCurrency(summary.dayChange)}
           </p>
