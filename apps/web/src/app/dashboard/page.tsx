@@ -43,7 +43,7 @@ export default function DashboardPage() {
   const assetTypes = ["us_stock", "sg_stock", "hk_stock", "crypto"] as const;
 
   return (
-    <div className="p-4">
+    <div className="p-4 pb-28">
       {/* Summary Cards */}
       <PortfolioSummary summary={portfolio.summary} usdToSgd={portfolio.usdToSgd} />
 
@@ -69,14 +69,16 @@ export default function DashboardPage() {
         );
       })}
 
-      {/* Add Holding Button */}
-      <div className="fixed bottom-6 right-6">
+      {/* Add Holding Button — round FAB on mobile, full pill on sm+; stacked above the floating AI chat button */}
+      <div className="fixed bottom-24 right-6 z-40">
         <Button
           size="lg"
-          className="rounded-full shadow-lg shadow-blue-500/25 !px-5 !py-3"
+          aria-label="Add holding"
+          className="!rounded-full shadow-lg shadow-blue-500/25 flex items-center justify-center !w-14 !h-14 !p-0 text-2xl leading-none sm:!w-auto sm:!h-auto sm:!px-5 sm:!py-3 sm:text-base"
           onClick={() => setShowAddModal(true)}
         >
-          + Add Holding
+          <span className="sm:hidden">+</span>
+          <span className="hidden sm:inline">+ Add Holding</span>
         </Button>
       </div>
 
