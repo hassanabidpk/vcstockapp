@@ -1,4 +1,4 @@
-import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, PortfolioAnalysis, FormattedReport } from "./types.js";
+import type { CollectedData, CollectedHolding, CollectedPortfolio, AnalysisResult, FormattedReport } from "./types.js";
 
 const MAX_MSG_LEN = 4096;
 
@@ -179,47 +179,8 @@ function buildAssetBreakdown(portfolios: CollectedPortfolio[]): string {
   return `📊 *BREAKDOWN*\n${parts.join("\n")}`;
 }
 
-const ACTION_EMOJI: Record<string, string> = {
-  hold: "🟢",
-  accumulate: "🔵",
-  watch: "🟡",
-  trim: "🔴",
-};
-
-function buildAIMessages(analysis: AnalysisResult): string[] {
-  const result: string[] = [];
-
-  for (let i = 0; i < analysis.portfolioAnalyses.length; i++) {
-    const pa = analysis.portfolioAnalyses[i];
-    const sections: string[] = [];
-
-    sections.push(`🤖 *AI ANALYSIS — ${esc(pa.portfolioName)}*`);
-
-    // Market overview only in first message
-    if (i === 0) {
-      sections.push(`📈 *MARKET*\n${esc(analysis.marketOverview)}`);
-    }
-
-    // Holding actions
-    if (pa.holdingActions.length > 0) {
-      const actionLines = pa.holdingActions.map((a) => {
-        const emoji = ACTION_EMOJI[a.action] || "🟡";
-        const label = a.action.charAt(0).toUpperCase() + a.action.slice(1);
-        return `${emoji} \`${esc(a.symbol)}\` — ${esc(label)}\\. ${esc(a.reasoning)}`;
-      });
-      sections.push(`⚡ *ACTIONS*\n${actionLines.join("\n")}`);
-    }
-
-    // Risks
-    sections.push(`⚠️ *RISKS*\n${esc(pa.risks)}`);
-
-    // Outlook
-    sections.push(`🔭 *OUTLOOK*\n${esc(pa.outlook)}`);
-
-    result.push(sections.join("\n\n"));
-  }
-
-  return result;
+function buildMarketMessage(analysis: AnalysisResult): string {
+  return `📈 *MARKET*\n${esc(analysis.marketOverview)}`;
 }
 
 // ── Message splitting ────────────────────────────────────────────────────────
@@ -291,11 +252,9 @@ export const reportFormatterService = {
     const dataText = sections.join("\n\n");
     const messages = splitMessages(dataText);
 
-    // AI messages — one per portfolio, each gets full 4096 chars
+    // Market wrap — single message, skipped when AI analysis is unavailable
     if (analysis) {
-      for (const aiText of buildAIMessages(analysis)) {
-        messages.push(...splitMessages(aiText));
-      }
+      messages.push(...splitMessages(buildMarketMessage(analysis)));
     }
 
     return { messages };

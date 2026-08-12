@@ -33,7 +33,7 @@ export const config = {
   googleCloudProject: process.env.GOOGLE_CLOUD_PROJECT || "",
   googleCloudLocation: process.env.GOOGLE_CLOUD_LOCATION || "global",
   googleCredentialsJson: process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "",
-  geminiModel: process.env.GEMINI_MODEL || "gemini-3-flash-preview",
+  geminiModel: process.env.GEMINI_MODEL || "gemini-3.6-flash",
 
   get isDev() {
     return this.nodeEnv === "development";

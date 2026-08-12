@@ -5,46 +5,18 @@ import type { CollectedData, AnalysisResult } from "../types.js";
 
 const AGENT_TIMEOUT_MS = 120_000;
 
-function parseHoldingActions(raw: unknown): { symbol: string; action: string; reasoning: string }[] {
-  const validActions = new Set(["hold", "trim", "accumulate", "watch"]);
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((a: Record<string, unknown>) => a.symbol && a.reasoning)
-    .map((a: Record<string, unknown>) => ({
-      symbol: String(a.symbol),
-      action: validActions.has(String(a.action)) ? String(a.action) : "watch",
-      reasoning: String(a.reasoning),
-    }));
-}
-
 function parseAnalysisResult(text: string): AnalysisResult {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
-
-      const portfolioAnalyses = Array.isArray(parsed.portfolioAnalyses)
-        ? parsed.portfolioAnalyses.map((pa: Record<string, unknown>) => ({
-            portfolioName: String(pa.portfolioName || "Unknown"),
-            holdingActions: parseHoldingActions(pa.holdingActions),
-            risks: String(pa.risks || "No risk assessment available."),
-            outlook: String(pa.outlook || "No outlook available."),
-          }))
-        : [];
-
-      return {
-        marketOverview: parsed.marketOverview || "No market overview available.",
-        portfolioAnalyses,
-      };
+      return { marketOverview: parsed.marketOverview || "No market overview available." };
     }
   } catch {
     logger.warn("Failed to parse agent JSON output, using raw text");
   }
 
-  return {
-    marketOverview: text || "No analysis available.",
-    portfolioAnalyses: [],
-  };
+  return { marketOverview: text || "No analysis available." };
 }
 
 export const aiAnalyzerService = {
@@ -76,14 +48,24 @@ export const aiAnalyzerService = {
       process.env.GOOGLE_CLOUD_LOCATION = config.googleCloudLocation;
       process.env.GOOGLE_GENAI_USE_VERTEXAI = "true";
 
-      const portfolioNames = data.portfolios.map((p) => p.name);
-      const systemPrompt = getSystemPrompt(data.reportType, portfolioNames);
+      const systemPrompt = getSystemPrompt(data.reportType);
+
+      // ADK JS has no `planner`, so thinking config goes through generateContentConfig,
+      // which is copied verbatim into the underlying GenerateContent request.
+      type ThinkingLevel = NonNullable<
+        NonNullable<
+          NonNullable<ConstructorParameters<typeof LlmAgent>[0]["generateContentConfig"]>["thinkingConfig"]
+        >["thinkingLevel"]
+      >;
 
       const agent = new LlmAgent({
-        name: "portfolio_analyst",
+        name: "market_analyst",
         model: config.geminiModel,
         instruction: systemPrompt,
         tools: [GOOGLE_SEARCH],
+        generateContentConfig: {
+          thinkingConfig: { thinkingLevel: "HIGH" as ThinkingLevel },
+        },
       });
 
       const sessionService = new InMemorySessionService();
